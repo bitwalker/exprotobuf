@@ -1,0 +1,17 @@
+message Basic {
+  enum Type {
+    START = 1;
+    STOP  = 2;
+  }
+
+  required uint32 f1 = 1;
+  required string f2 = 2;
+  required Type type = 3;
+
+  message AssocPair {
+    optional string key = 1;
+    optional string value = 2;
+  }
+
+  optional AssocPair args = 4;
+}
