@@ -20,7 +20,7 @@ TODO:
 
 ## Examples
 
-## Define from a string
+### Define from a string
 
 ```elixir
 defmodule Messages do
@@ -51,7 +51,7 @@ iex> Messages.Msg.decode(encoded)
 %Messages.Msg{version: :V2, sub: nil}
 ```
 
-## Define from a file
+### Define from a file
 
 ```elixir
 defmodule Messages do
@@ -59,7 +59,7 @@ defmodule Messages do
 end
 ```
 
-## Extend generated modules via `use_in`
+### Extend generated modules via `use_in`
 
 ```elixir
 defmodule Messages do
