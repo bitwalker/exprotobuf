@@ -4,6 +4,8 @@ exprotobuf works by building module/struct definitions from a [Google Protocol B
 schema. This allows you to work with protocol buffers natively in Elixir, with easy decoding/encoding for transport across the
 wire.
 
+[![wercker status](https://app.wercker.com/status/2637c2f7cae8bdc7dade2e9ca7cb0019/m/ "wercker status")](https://app.wercker.com/project/bykey/2637c2f7cae8bdc7dade2e9ca7cb0019)
+
 ## Features
 
 * Load protobuf from file or string
