@@ -15,7 +15,6 @@ defmodule Protobuf do
         types = parse_only(only, __CALLER__)
         case types do
           []       -> raise ConfigError, error: "You must specify a type using :only when combined with inject: true"
-          [_,_|_]  -> raise ConfigError, error: "You may only specify a single type with :only when combined with inject: true"
           [_type]  -> %Config{namespace: namespace, schema: schema, only: types, inject: true}
         end
       from: file ->
@@ -26,7 +25,6 @@ defmodule Protobuf do
         types = parse_only(only, __CALLER__)
         case types do
           []       -> raise ConfigError, error: "You must specify a type using :only when combined with inject: true"
-          [_,_|_]  -> raise ConfigError, error: "You may only specify a single type with :only when combined with inject: true"
           [_type]  -> %Config{namespace: namespace, schema: read_file(file, __CALLER__), only: types, inject: true}
         end
     end

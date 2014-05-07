@@ -36,15 +36,18 @@ defmodule Protobuf.Builder do
   # Generate code of records (message and enum)
   def generate(msgs, config) do
     only   = Keyword.get(config, :only, [])
-    inject = Keyword.get(config, :inject, false) && length(only) == 1
+    inject = Keyword.get(config, :inject, false)
     ns     = Keyword.get(config, :namespace)
 
     quotes = for {{item_type, item_name}, fields} <- msgs, item_type in [:msg, :enum], into: [] do
       if only != [] do
-        if item_name in only do
+        is_child? = Enum.any?(only, fn o -> o != item_name and is_child_type?(item_name, o) end)
+        if item_name in only or is_child? do
           case item_type do
-            :msg  -> def_message(ns, fields, inject: inject)
-            :enum -> def_enum(ns, fields, inject: inject)
+            :msg when is_child?  -> def_message(item_name |> fix_ns(ns), fields, inject: false)
+            :msg                 -> def_message(ns, fields, inject: inject)
+            :enum when is_child? -> def_enum(item_name |> fix_ns(ns), fields, inject: false)
+            :enum                -> def_enum(ns, fields, inject: inject)
             _     -> []
           end
         end
@@ -67,5 +70,17 @@ defmodule Protobuf.Builder do
         end
       end]
     end
+  end
+
+  defp is_child_type?(child, type) do
+    [parent|_] = child |> atom_to_binary |> String.split(".", parts: :infinity)
+    atom_to_binary(type) == parent
+  end
+
+  defp fix_ns(name, ns) do
+    name_parts = name |> atom_to_binary |> String.split(".", parts: :infinity)
+    ns_parts   = ns   |> atom_to_binary |> String.split(".", parts: :infinity)
+    module     = name_parts -- ns_parts |> Enum.join |> binary_to_atom
+    :"#{ns}.#{module}"
   end
 end
