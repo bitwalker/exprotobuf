@@ -13,7 +13,7 @@ defmodule GpbCompileHelper do
   end
 
   def compile_tmp_proto(msgs, options, module, func) do
-    {:ok, defs} = Protobuf.Parse.parse(msgs, options)
+    {:ok, defs} = Protobuf.Parser.parse(msgs, options)
 
     options = [:binary | options]
 

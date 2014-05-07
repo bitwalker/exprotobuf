@@ -1,7 +1,7 @@
-defmodule Protobuf.Parse do
+defmodule Protobuf.Parser do
 
-  defexception ParseError, error: nil do
-    def message(ParseError[error: error]) do
+  defexception ParserError, error: nil do
+    def message(ParserError[error: error]) do
       inspect(error)
     end
   end
@@ -25,9 +25,8 @@ defmodule Protobuf.Parse do
 
   def parse!(string, options \\ []) do
     case parse(string, options) do
-      {:ok, defs} -> defs
-      {:error, error} ->
-        raise(ParseError, error: error)
+      {:ok, defs}     -> defs
+      {:error, error} -> raise ParserError, error: error
     end
   end
 end

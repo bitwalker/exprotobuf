@@ -59,6 +59,37 @@ defmodule Messages do
 end
 ```
 
+### Inject a definition into an existing module
+
+```elixir
+defmodule Msg do
+  use Protobuf, "
+    message Msg {
+      enum Version {
+        V1 = 1;
+        V2 = 1;
+      }
+      required Version v = 1;
+    }
+  ", inject: true
+
+  def update(msg, key, value), do: Map.put(msg, key, value)
+end
+```
+
+```elixir
+iex> %Msg{}
+%Msg{v: :V1}
+iex> Msg.update(%Msg{}, :v, :V2)
+%Msg{v: :V2}
+```
+
+### Inject a specific type from a larger subset of types
+
+By passing `only: :Msg` or `only: [:Msg,...]` where `:Msg` is the name of your desired type, you can create definitions
+for a subset of types from a larger schema file. Be aware that when combined with `inject: true`, you can only specify
+a single type, due to limitations around multiple structs in a single module.
+
 ### Extend generated modules via `use_in`
 
 ```elixir

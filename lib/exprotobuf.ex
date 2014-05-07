@@ -1,43 +1,78 @@
 defmodule Protobuf do
-  import Protobuf.Parse, only: [parse!: 1]
-  import Protobuf.DefineRecords, only: [def_records: 1]
+  alias Protobuf.Parser
+  alias Protobuf.Builder
+  alias Protobuf.Config
+  alias Protobuf.ConfigError
 
   defmacro __using__(opts) do
-    defs = case opts do
-      << string :: binary >> -> string
+    namespace = __CALLER__.module
+    config = case opts do
+      << schema :: binary >> ->
+        %Config{namespace: namespace, schema: schema}
+      [<< schema :: binary >>, only: only] ->
+        %Config{namespace: namespace, schema: schema, only: parse_only(only, __CALLER__)}
+      [<< schema :: binary >>, only: only, inject: true] ->
+        types = parse_only(only, __CALLER__)
+        case types do
+          []       -> raise ConfigError, error: "You must specify a type using :only when combined with inject: true"
+          [_,_|_]  -> raise ConfigError, error: "You may only specify a single type with :only when combined with inject: true"
+          [_type]  -> %Config{namespace: namespace, schema: schema, only: types, inject: true}
+        end
       from: file ->
-        {file, []} = Code.eval_quoted(file, [], __CALLER__)
-        File.read!(file)
+        %Config{namespace: namespace, schema: read_file(file, __CALLER__)}
+      [from: file, only: only] ->
+        %Config{namespace: namespace, schema: read_file(file, __CALLER__), only: parse_only(only, __CALLER__)}
+      [from: file, only: only, inject: true] ->
+        types = parse_only(only, __CALLER__)
+        case types do
+          []       -> raise ConfigError, error: "You must specify a type using :only when combined with inject: true"
+          [_,_|_]  -> raise ConfigError, error: "You may only specify a single type with :only when combined with inject: true"
+          [_type]  -> %Config{namespace: namespace, schema: read_file(file, __CALLER__), only: types, inject: true}
+        end
     end
 
-    module = __CALLER__.module
-    parse_and_fixns(defs, module) |> def_records
+    config |> parse |> Builder.define(config)
   end
 
-  # Call parse and fix namespaces
-  defp parse_and_fixns(defs, ns) do
-    parse!(defs) |> fix_defs_ns(ns)
+  # Read the file passed to :from
+  defp read_file(file, caller) do
+    {file, []} = Code.eval_quoted(file, [], caller)
+    File.read!(file)
   end
 
-  defp fix_defs_ns(defs, ns) do
-    for {{type, name}, fields} <- defs do
-      {{type, :"#{ns}.#{name}"}, fix_fields_ns(type, fields, ns)}
+  # Read the type or list of types to extract from the schema
+  defp parse_only(only, caller) do
+    {types, []} = Code.eval_quoted(only, [], caller)
+    case types do
+      types when is_list(types) -> types
+      types when types == nil   -> []
+      _                         -> [types]
     end
   end
 
-  defp fix_fields_ns(:msg, fields, ns) do
-    Enum.map(fields, &fix_field_ns(&1, ns))
+  # Parse and fix namespaces of parsed types
+  defp parse(%Config{namespace: ns, schema: schema, inject: inject}) do
+    Parser.parse!(schema) |> namespace_types(ns, inject)
   end
 
-  defp fix_fields_ns(_, fields, _) do
-    fields
+  # Apply namespace to top-level types
+  defp namespace_types(parsed, ns, inject) do
+    for {{type, name}, fields} <- parsed do
+      if inject do
+        {{type, :"#{name}"}, namespace_fields(type, fields, ns)}
+      else
+        {{type, :"#{ns}.#{name}"}, namespace_fields(type, fields, ns)}
+      end
+    end
   end
 
-  defp fix_field_ns(:field[type: {type, name}] = field, ns) do
+  # Apply namespace to nested types
+  defp namespace_fields(:msg, fields, ns), do: Enum.map(fields, &namespace_fields(&1, ns))
+  defp namespace_fields(_, fields, _),     do: fields
+  defp namespace_fields(:field[type: {type, name}] = field, ns) do
     field.type { type, :"#{ns}.#{name}" }
   end
-
-  defp fix_field_ns(:field[] = field, _ns) do
+  defp namespace_fields(:field[] = field, _ns) do
     field
   end
 end

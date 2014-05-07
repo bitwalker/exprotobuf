@@ -1,10 +1,10 @@
 defmodule Protobuf.Parse.Test do
   use Protobuf.Case
-  alias Protobuf.Parse
+  alias Protobuf.Parser
 
   test "parse string" do
     msg = "message Msg { required uint32 field1 = 1; }"
-    {:ok, [msg | _]} = Parse.parse(msg)
+    {:ok, [msg | _]} = Parser.parse(msg)
     assert is_tuple(msg)
   end
 
@@ -16,20 +16,20 @@ defmodule Protobuf.Parse.Test do
       ]
     }]
 
-    [_, {msg, [field]} | _] = Parse.parse!(msg)
+    [_, {msg, [field]} | _] = Parser.parse!(msg)
 
     assert {:msg, :Msg} == msg
     assert {:enum, :"Msg.Type"} == elem(field, 4)
   end
 
   test "return erro for parse error" do
-    {result, _} = Parse.parse("message ;")
+    {result, _} = Parser.parse("message ;")
     assert :error == result
   end
 
   test "raise exception with parse error" do
-    assert_raise Parse.ParseError, fn ->
-      Parse.parse!("message ;")
+    assert_raise Parser.ParserError, fn ->
+      Parser.parse!("message ;")
     end
   end
 end
