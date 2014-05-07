@@ -5,6 +5,8 @@ defmodule Protobuf.Mixfile do
     [app: :exprotobuf,
      version: "0.1.1",
      elixir: "~> 0.13.2-dev",
+     description: description,
+     package: package,
      deps: deps]
   end
 
@@ -13,6 +15,20 @@ defmodule Protobuf.Mixfile do
   # Type `mix help compile.app` for more information
   def application do
     [applications: []]
+  end
+
+  defp description do
+    """
+    exprotobuf provides native encoding/decoding of 
+    protobuf messages via generated modules/structs.
+    """
+  end
+
+  defp package do
+    [ files: ["lib", "mix.exs", "README.md", "LICENSE"],
+      contributors: ["Paul Schoenfelder", "azukiaapp"],
+      licenses: ["Apache Version 2.0"],
+      links: [ {"GitHub", "https://github.com/bitwalker/exprotobuf"} ] ]
   end
 
   # Dependencies can be hex.pm packages:
