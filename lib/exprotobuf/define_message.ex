@@ -38,7 +38,7 @@ defmodule Protobuf.DefineMessage do
           unquote(constructors(name))
 
           if use_in != nil do
-            Module.eval_quoted(__MODULE__, use_in, [{:Msg, Msg}], __ENV__)
+            Module.eval_quoted(__MODULE__, use_in, [], __ENV__)
           end
         end
       end
