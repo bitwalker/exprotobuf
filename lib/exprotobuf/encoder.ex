@@ -1,9 +1,16 @@
 defmodule Protobuf.Encoder do
+  alias Protobuf.Utils
+  alias Protobuf.Field
+
   def encode(%{} = msg, defs) do
+    fixed_defs = for {{:msg, mod}, fields} <- defs, into: [] do
+      {{:msg, mod}, Enum.map(fields, fn field -> field |> Utils.convert_to_record(Field) end)}
+    end
+
     msg
     |> fix_undefined
-    |> convert_to_record
-    |> :gpb.encode_msg(defs)
+    |> Utils.convert_to_record(msg.__struct__)
+    |> :gpb.encode_msg(fixed_defs)
   end
 
   defp fix_undefined(%{} = msg) do
@@ -21,14 +28,6 @@ defmodule Protobuf.Encoder do
 
   defp fix_value(nil),                         do: :undefined
   defp fix_value(values) when is_list(values), do: Enum.map(values, &fix_value/1)
-  defp fix_value(value)  when is_map(value),   do: value |> fix_undefined |> convert_to_record
+  defp fix_value(value)  when is_map(value),   do: value |> fix_undefined |> Utils.convert_to_record(value.__struct__)
   defp fix_value(value),                       do: value
-
-  defp convert_to_record(map) do
-    map
-    |> Map.to_list
-    |> Enum.reduce([], fn {_key, value}, acc -> [value | acc] end)
-    |> Enum.reverse
-    |> list_to_tuple
-  end
 end

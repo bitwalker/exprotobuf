@@ -1,8 +1,4 @@
-defexception Protobuf.ConfigError, error: nil do
-  def message(Protobuf.ConfigError[error: error]) do
-    inspect(error)
-  end
-end
+defexception Protobuf.ConfigError, message: nil
 
 defmodule Protobuf.Config do
   @moduledoc """

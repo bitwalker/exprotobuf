@@ -9,7 +9,7 @@ defmodule Protobuf.Builder do
   def define(msgs, %Config{inject: inject} = config) do
     # When injecting, use_in is not available, so we don't need to use @before_compile
     if inject do
-      quote do
+      quote location: :keep do
         Module.register_attribute __MODULE__, :use_in, accumulate: true
         import unquote(__MODULE__), only: [use_in: 2]
 
@@ -31,7 +31,7 @@ defmodule Protobuf.Builder do
   end
 
   defmacro __before_compile__(_env) do
-    quote do
+    quote location: :keep do
       contents = unquote(__MODULE__).generate(@msgs, @config)
       Module.eval_quoted __MODULE__, contents, [], __ENV__
     end
@@ -41,7 +41,7 @@ defmodule Protobuf.Builder do
   defmacro use_in(module, use_module) do
     module = :"#{__CALLER__.module}.#{module}"
     use_module = quote do: use(unquote(use_module))
-    quote do
+    quote location: :keep do
       @use_in {unquote(module), unquote(Macro.escape(use_module)) }
     end
   end

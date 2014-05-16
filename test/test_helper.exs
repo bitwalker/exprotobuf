@@ -6,7 +6,7 @@ defmodule Protobuf.Case do
   use ExUnit.CaseTemplate
 
   using _ do
-    quote do
+    quote location: :keep do
       import unquote(__MODULE__)
       alias GpbCompileHelper, as: Gpb
 

@@ -3,18 +3,19 @@ defmodule Protobuf.DefineMessage do
 
   alias Protobuf.Decoder
   alias Protobuf.Encoder
-
-  defrecord :field, Record.Extractor.extract(:field, from: Path.join([Mix.Project.deps_path, "gpb", "include", "gpb.hrl"]))
+  alias Protobuf.Field
 
   def def_message(name, fields, inject: inject) when is_list(fields) do
     struct_fields = record_fields(fields)
     # Inject everything in 'using' module
     if inject do
-      quote do
+      quote location: :keep do
         @root __MODULE__
+        @record unquote(struct_fields)
+        defstruct @record
         fields = unquote(struct_fields)
 
-        defstruct unquote(struct_fields)
+        def record, do: @record
 
         unquote(encode_decode(name))
         unquote(fields_methods(fields))
@@ -22,14 +23,17 @@ defmodule Protobuf.DefineMessage do
       end
     # Or create a nested module, with use_in functionality
     else
-      quote do
+      quote location: :keep do
         root   = __MODULE__
         fields = unquote(struct_fields)
         use_in = @use_in[unquote(name)]
 
         defmodule unquote(name) do
           @root root
-          defstruct unquote(struct_fields)
+          @record unquote(struct_fields)
+          defstruct @record
+
+          def record, do: @record
 
           unquote(encode_decode(name))
           unquote(fields_methods(fields))
@@ -46,7 +50,7 @@ defmodule Protobuf.DefineMessage do
   end
 
   defp constructors(name) do
-    quote do
+    quote location: :keep do
       def new(), do: %unquote(name){}
       def new(values) when is_list(values) do
         Enum.reduce(values, %unquote(name){}, fn
@@ -69,8 +73,8 @@ defmodule Protobuf.DefineMessage do
   end
 
   defp fields_methods(fields) do
-    for :field[name: name, fnum: fnum] = field <- fields do
-      quote do
+    for %Field{name: name, fnum: fnum} = field <- fields do
+      quote location: :keep do
         def defs(:field, unquote(fnum)), do: unquote(Macro.escape(field))
         def defs(:field, unquote(name)), do: defs(:field, unquote(fnum))
       end
@@ -86,7 +90,7 @@ defmodule Protobuf.DefineMessage do
   end
 
   defp record_fields(fields) do
-    for :field[name: name, occurrence: occurrence] <- fields do
+    for %Field{name: name, occurrence: occurrence} <- fields do
       {name, case occurrence do
         :repeated -> []
         _ -> nil

@@ -1,19 +1,23 @@
 defmodule Protobuf.Decoder do
   use Bitwise, only_operators: true
+  alias Protobuf.Field
+  alias Protobuf.Utils
 
   # Decode with record/module
   def decode(bytes, module) do
-    #IO.inspect {bytes, module, module.defs}
-    :gpb.decode_msg(bytes, module, module.defs)
-    |> convert_from_record(module)
-    |> fix_msg
+    defs = for {{:msg, mod}, fields} <- module.defs, into: [] do
+      {{:msg, mod}, Enum.map(fields, fn field -> field |> Utils.convert_to_record(Field) end)}
+    end
+    :gpb.decode_msg(bytes, module, defs)
+    |> Utils.convert_from_record(module)
+    |> convert_fields
   end
 
   def varint(bytes) do
     :gpb.decode_varint(bytes)
   end
 
-  defp fix_msg(msg) do
+  defp convert_fields(msg) do
     Enum.reduce(Map.keys(msg), msg, fn
       :__struct__, msg -> msg
       field, %{__struct__: module} = msg ->
@@ -22,37 +26,26 @@ defmodule Protobuf.Decoder do
         if value == :undefined do
           Map.put(msg, field, default)
         else
-          fix_field(value, msg, module.defs(:field, field))
+          convert_field(value, msg, module.defs(:field, field))
         end
     end)
   end
 
-  defp fix_field(value, msg, :field[name: field, type: type, occurrence: occurrence]) do
+  defp convert_field(value, msg, %Field{name: field, type: type, occurrence: occurrence}) do
     case {occurrence, type} do
       {:repeated, _} ->
-        value = for v <- value, do: fix_value(type, v)
+        value = for v <- value, do: convert_value(type, v)
         Map.put(msg, field, value)
       {_, :string}   ->
-        Map.put(msg, field, fix_value(type, value))
+        Map.put(msg, field, convert_value(type, value))
       {_, {:msg, _}} ->
-        Map.put(msg, field, fix_value(type, value))
+        Map.put(msg, field, convert_value(type, value))
       _ ->
         msg
     end
   end
 
-  defp fix_value(:string, value),   do: :unicode.characters_to_binary(value)
-  defp fix_value({:msg, _}, value), do: value |> convert_from_record(elem(value, 0)) |> fix_msg
-  defp fix_value(_, value),         do: value
-
-  defp convert_from_record(rec, module) do
-    map = struct(module)
-
-    Map.keys(map)
-    |> Enum.with_index
-    |> Enum.reduce(map, fn {key, idx}, acc ->
-      value = elem(rec, idx)
-      Map.put(acc, key, value)
-    end)
-  end
+  defp convert_value(:string, value),   do: :unicode.characters_to_binary(value)
+  defp convert_value({:msg, _}, value), do: value |> Utils.convert_from_record(elem(value, 0)) |> convert_fields
+  defp convert_value(_, value),         do: value
 end

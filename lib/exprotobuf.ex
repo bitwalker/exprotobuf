@@ -3,6 +3,8 @@ defmodule Protobuf do
   alias Protobuf.Builder
   alias Protobuf.Config
   alias Protobuf.ConfigError
+  alias Protobuf.Field
+  alias Protobuf.Utils
 
   defmacro __using__(opts) do
     namespace = __CALLER__.module
@@ -67,10 +69,13 @@ defmodule Protobuf do
   # Apply namespace to nested types
   defp namespace_fields(:msg, fields, ns), do: Enum.map(fields, &namespace_fields(&1, ns))
   defp namespace_fields(_, fields, _),     do: fields
-  defp namespace_fields(:field[type: {type, name}] = field, ns) do
-    field.type { type, :"#{ns}.#{name}" }
+  defp namespace_fields(field, ns) when not is_map(field) do
+    field |> Utils.convert_from_record(Field) |> namespace_fields(ns)
   end
-  defp namespace_fields(:field[] = field, _ns) do
+  defp namespace_fields(%Field{type: {type, name}} = field, ns) do
+    %{field | :type => {type, :"#{ns}.#{name}"}}
+  end
+  defp namespace_fields(%Field{} = field, _ns) do
     field
   end
 end

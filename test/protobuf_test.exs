@@ -90,14 +90,14 @@ defmodule ProtobufTest do
 
   test "define a method to get proto defs" do
     mod  = def_proto_module "message Msg { optional uint32 f1 = 1; }"
-    defs = [{{:msg, mod.Msg}, [{:field, :f1, 1, 2, :uint32, :optional, []}]}]
+    defs = [{{:msg, mod.Msg}, [%Protobuf.Field{name: :f1, fnum: 1, rnum: 2, type: :uint32, occurrence: :optional, opts: []}]}]
     assert defs == mod.defs
     assert defs == mod.Msg.defs
   end
 
   test "defined a method defs to get field info" do
     mod  = def_proto_module "message Msg { optional uint32 f1 = 1; }"
-    deff = {:field, :f1, 1, 2, :uint32, :optional, []}
+    deff = %Protobuf.Field{name: :f1, fnum: 1, rnum: 2, type: :uint32, occurrence: :optional, opts: []}
     assert deff == mod.Msg.defs(:field, 1)
     assert deff == mod.Msg.defs(:field, :f1)
   end

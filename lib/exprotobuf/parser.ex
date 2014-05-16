@@ -1,10 +1,6 @@
 defmodule Protobuf.Parser do
 
-  defexception ParserError, error: nil do
-    def message(ParserError[error: error]) do
-      inspect(error)
-    end
-  end
+  defexception ParserError, message: nil
 
   def parse(msgs),                             do: parse(msgs, [])
   def parse(defs, options) when is_list(defs), do: :gpb_parse.post_process(defs, options)
@@ -26,7 +22,7 @@ defmodule Protobuf.Parser do
   def parse!(string, options \\ []) do
     case parse(string, options) do
       {:ok, defs}     -> defs
-      {:error, error} -> raise ParserError, error: error
+      {:error, error} -> raise ParserError, message: error
     end
   end
 end
