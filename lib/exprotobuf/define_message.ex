@@ -20,6 +20,7 @@ defmodule Protobuf.DefineMessage do
         unquote(encode_decode(name))
         unquote(fields_methods(fields))
         unquote(meta_information)
+        unquote(constructors(name))
       end
     # Or create a nested module, with use_in functionality
     else
