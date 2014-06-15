@@ -1,4 +1,6 @@
-defexception Protobuf.ConfigError, message: nil
+defmodule Protobuf.ConfigError do
+  defexception [:message]
+end
 
 defmodule Protobuf.Config do
   @moduledoc """
