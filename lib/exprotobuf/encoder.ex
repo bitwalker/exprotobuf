@@ -3,8 +3,11 @@ defmodule Protobuf.Encoder do
   alias Protobuf.Field
 
   def encode(%{} = msg, defs) do
-    fixed_defs = for {{:msg, mod}, fields} <- defs, into: [] do
-      {{:msg, mod}, Enum.map(fields, fn field -> field |> Utils.convert_to_record(Field) end)}
+    fixed_defs = for {{type, mod}, fields} <- defs, into: [] do
+      case type do
+        :msg  -> {{:msg, mod}, Enum.map(fields, fn field -> field |> Utils.convert_to_record(Field) end)}
+        :enum -> {{:enum, mod}, fields}
+      end
     end
 
     msg
