@@ -16,6 +16,15 @@ defmodule Protobuf.Encoder.Test do
       message WithRepeatedSubMsg {
         repeated Msg f1 = 1;
       }
+
+      message WithEnum {
+        enum Version {
+          V1 = 1;
+          V2 = 2;
+        }
+
+        required Version version = 1;
+      }
     "}
   end
 
@@ -30,5 +39,11 @@ defmodule Protobuf.Encoder.Test do
     mod = var[:mod]
     msg = mod.WithRepeatedSubMsg.new(f1: [mod.Msg.new(f1: 1)])
     assert <<10, 2, 8, 1>> == E.encode(msg, mod.WithRepeatedSubMsg.defs)
+  end
+
+  test "encodes enums", var do
+    mod = var[:mod]
+    msg = mod.WithEnum.new(version: :'V1')
+    assert <<8, 1>> == E.encode(msg, mod.WithEnum.defs)
   end
 end
