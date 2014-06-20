@@ -86,14 +86,14 @@ defmodule Protobuf.Builder do
   end
 
   defp is_child_type?(child, type) do
-    [parent|_] = child |> atom_to_binary |> String.split(".", parts: :infinity)
-    atom_to_binary(type) == parent
+    [parent|_] = child |> Atom.to_string |> String.split(".", parts: :infinity)
+    Atom.to_string(type) == parent
   end
 
   defp fix_ns(name, ns) do
-    name_parts = name |> atom_to_binary |> String.split(".", parts: :infinity)
-    ns_parts   = ns   |> atom_to_binary |> String.split(".", parts: :infinity)
-    module     = name_parts -- ns_parts |> Enum.join |> binary_to_atom
+    name_parts = name |> Atom.to_string |> String.split(".", parts: :infinity)
+    ns_parts   = ns   |> Atom.to_string |> String.split(".", parts: :infinity)
+    module     = name_parts -- ns_parts |> Enum.join |> String.to_atom
     :"#{ns}.#{module}"
   end
 end

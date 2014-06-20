@@ -19,7 +19,7 @@ defmodule Protobuf.Utils do
       [value|acc]
     end)
     |> Enum.reverse
-    |> list_to_tuple
+    |> List.to_tuple
   end
 
   def convert_from_record(rec, module) do
