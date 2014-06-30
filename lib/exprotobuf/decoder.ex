@@ -5,8 +5,11 @@ defmodule Protobuf.Decoder do
 
   # Decode with record/module
   def decode(bytes, module) do
-    defs = for {{:msg, mod}, fields} <- module.defs, into: [] do
-      {{:msg, mod}, Enum.map(fields, fn field -> field |> Utils.convert_to_record(Field) end)}
+    defs = for {{type, mod}, fields} <- module.defs, into: [] do
+      case type do
+        :msg  -> {{:msg, mod}, Enum.map(fields, fn field -> field |> Utils.convert_to_record(Field) end)}
+        :enum -> {{:enum, mod}, fields}
+      end
     end
     :gpb.decode_msg(bytes, module, defs)
     |> Utils.convert_from_record(module)

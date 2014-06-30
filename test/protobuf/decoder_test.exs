@@ -41,4 +41,26 @@ defmodule Protobuf.Decoder.Test do
     bytes = <<10, 1, 97, 18, 5, 10, 3, 97, 98, 99>>
     assert %{:__struct__ => ^module, :f1 => "a", :f2 => %{:__struct__ => ^submod, :f1 => "abc"}} = D.decode(bytes, mod.Msg)
   end
+
+  test "enums" do
+    mod = def_proto_module """
+      message Msg {
+        message SubMsg {
+          required uint32 value = 1;
+        }
+
+        enum Version {
+          V1 = 1;
+          V2 = 2;
+        }
+
+        required Version version = 2;
+        optional SubMsg sub = 1;
+      }
+      """
+    msg = mod.Msg.new(version: :'V2')
+    encoded = mod.Msg.encode(msg)
+    decoded = mod.Msg.decode(encoded)
+    assert ^msg = decoded
+  end
 end
