@@ -33,7 +33,7 @@ defmodule Protobuf.Decoder.Test do
       optional SubMsg f2 = 2;
     }"
 
-    bytes = <<10,11,?a,?b,?c,?\303,?\245,?\303,?\244,?\303,?\266,?\317,?\276>>
+    bytes = <<10,11,?a,?b,?c,0o303,0o245,0o303,0o244,0o303,0o266,0o317,0o276>>
     module = mod.Msg
     submod = mod.Msg.SubMsg
     assert %{:__struct__ => ^module, :f1 => "abcåäöϾ", :f2 => nil} = D.decode(bytes, mod.Msg)
