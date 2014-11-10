@@ -1,1 +1,1 @@
-%{"gpb": {:git, "git://github.com/tomas-abrahamsson/gpb.git", "c9b3374133db80ef6c4f57fdc8d37ddaa328f595", []}}
+%{"gpb": {:git, "git://github.com/tomas-abrahamsson/gpb.git", "a6da429e3f433b958ae4f2806db57cd6451afb05", []}}
