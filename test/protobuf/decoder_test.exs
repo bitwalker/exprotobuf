@@ -63,4 +63,13 @@ defmodule Protobuf.Decoder.Test do
     decoded = mod.Msg.decode(encoded)
     assert ^msg = decoded
   end
+
+  test "complex proto decoding" do
+    defmodule MumbleProto do
+      use Protobuf, from: Path.expand("../proto/mumble.proto", __DIR__)
+    end
+
+    msg = MumbleProto.Authenticate.new(username: "bitwalker")
+    assert %{username: "bitwalker", password: nil, tokens: []} = msg
+  end
 end
