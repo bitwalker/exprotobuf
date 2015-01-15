@@ -26,7 +26,7 @@ Add exprotobuf as a dependency to your project:
 ```elixir
 defp deps do
   [{:exprotobuf, "~> 0.8.5"},
-   {:gpb, github: "tomas-abrahamsson/gpb"}]
+   {:gpb, github: "tomas-abrahamsson/gpb", tag: "3.17.2"}]
 end
 ```
 
