@@ -52,9 +52,9 @@ defmodule Protobuf.DefineMessage do
 
   defp constructors(name) do
     quote location: :keep do
-      def new(), do: %unquote(name){}
+      def new(), do: struct(unquote(name))
       def new(values) when is_list(values) do
-        Enum.reduce(values, %unquote(name){}, fn
+        Enum.reduce(values, new, fn
           {key, value}, obj ->
             if Map.has_key?(obj, key) do
               Map.put(obj, key, value)
@@ -84,9 +84,10 @@ defmodule Protobuf.DefineMessage do
 
   defp meta_information do
     quote do
-      def defs(_ \\ nil),         do: @root.defs
+      def defs,                   do: @root.defs
       def defs(:field, _),        do: nil
       def defs(:field, field, _), do: defs(:field, field)
+      defoverridable [defs: 0]
     end
   end
 

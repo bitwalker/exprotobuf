@@ -18,6 +18,16 @@ defmodule ProtobufTest do
     assert %{:__struct__ => ^msg2, :f1 => "foo"} = mod.Msg2.new(f1: "foo")
   end
 
+  test "define records in namespace with injection" do
+    mod = def_proto_module ["
+       message Msg1 {
+         required uint32 f1 = 1;
+       }
+    ", only: :Msg1, inject: true]
+
+    assert %{:__struct__ => ^mod, :f1 => 1} = mod.new(f1: 1)
+  end
+
   test "set default value for nil is optional" do
     mod = def_proto_module "message Msg { optional uint32 f1 = 1; }"
     msg = mod.Msg.new()
