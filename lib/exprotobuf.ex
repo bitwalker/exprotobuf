@@ -13,6 +13,9 @@ defmodule Protobuf do
         %Config{namespace: namespace, schema: schema}
       [<< schema :: binary >>, only: only] ->
         %Config{namespace: namespace, schema: schema, only: parse_only(only, __CALLER__)}
+      [<< schema :: binary >>, inject: true] ->
+        only = namespace |> Module.split |> Enum.join(".") |> String.to_atom
+        %Config{namespace: namespace, schema: schema, only: [only], inject: true}
       [<< schema :: binary >>, only: only, inject: true] ->
         types = parse_only(only, __CALLER__)
         case types do
@@ -23,6 +26,8 @@ defmodule Protobuf do
         %Config{namespace: namespace, schema: read_file(file, __CALLER__)}
       [from: file, only: only] ->
         %Config{namespace: namespace, schema: read_file(file, __CALLER__), only: parse_only(only, __CALLER__)}
+      [from: file, inject: true] ->
+        %Config{namespace: namespace, schema: read_file(file, __CALLER__), only: [namespace], inject: true}
       [from: file, only: only, inject: true] ->
         types = parse_only(only, __CALLER__)
         case types do
