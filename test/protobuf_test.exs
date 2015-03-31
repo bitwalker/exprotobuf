@@ -19,11 +19,15 @@ defmodule ProtobufTest do
   end
 
   test "define records in namespace with injection" do
-    mod = def_proto_module ["
-       message Msg1 {
-         required uint32 f1 = 1;
+    contents = quote do
+      use Protobuf, ["
+       message InjectionTest {
+           required uint32 f1 = 1;
        }
-    ", only: :Msg1, inject: true]
+      ", inject: true]
+    end
+
+    {:module, mod, _, _} = Module.create(InjectionTest, contents, Macro.Env.location(__ENV__))
 
     assert %{:__struct__ => ^mod, :f1 => 1} = mod.new(f1: 1)
   end
