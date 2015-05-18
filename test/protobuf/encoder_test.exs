@@ -17,6 +17,16 @@ defmodule Protobuf.Encoder.Test do
         repeated Msg f1 = 1;
       }
 
+      message extraMsg {
+        enum msgType {
+          NACK = 0;
+          ACK = 1;
+        }
+
+        required msgType type = 1;
+        repeated Msg message = 2;
+      }
+
       message WithEnum {
         enum Version {
           V1 = 1;
@@ -39,6 +49,12 @@ defmodule Protobuf.Encoder.Test do
     mod = var[:mod]
     msg = mod.WithRepeatedSubMsg.new(f1: [mod.Msg.new(f1: 1)])
     assert <<10, 2, 8, 1>> == E.encode(msg, mod.WithRepeatedSubMsg.defs)
+  end
+
+  test "fixing lowercase message and enum references", var do
+    mod = var[:mod]
+    msg = mod.ExtraMsg.new(type: :ACK, message: [mod.Msg.new(f1: 1)])
+    assert <<8, 1, 18, 2, 8, 1>> == E.encode(msg, mod.ExtraMsg.defs)
   end
 
   test "encodes enums", var do

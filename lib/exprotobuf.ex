@@ -59,9 +59,9 @@ defmodule Protobuf do
   defp namespace_types(parsed, ns, inject) do
     for {{type, name}, fields} <- parsed do
       if inject do
-        {{type, :"#{name}"}, namespace_fields(type, fields, ns)}
+        {{type, :"#{name |> normalize_name}"}, namespace_fields(type, fields, ns)}
       else
-        {{type, :"#{ns}.#{name}"}, namespace_fields(type, fields, ns)}
+        {{type, :"#{ns}.#{name |> normalize_name}"}, namespace_fields(type, fields, ns)}
       end
     end
   end
@@ -73,9 +73,21 @@ defmodule Protobuf do
     field |> Utils.convert_from_record(Field) |> namespace_fields(ns)
   end
   defp namespace_fields(%Field{type: {type, name}} = field, ns) do
-    %{field | :type => {type, :"#{ns}.#{name}"}}
+    %{field | :type => {type, :"#{ns}.#{name |> normalize_name}"}}
   end
   defp namespace_fields(%Field{} = field, _ns) do
     field
+  end
+
+  # Normalizes module names by ensuring they are cased correctly
+  # (respects camel-case and nested modules)
+  defp normalize_name(name) do
+    name
+    |> Atom.to_string
+    |> String.split(".", parts: :infinity)
+    |> Enum.map(fn(x) -> String.split_at(x, 1) end)
+    |> Enum.map(fn({first, remainder}) -> String.upcase(first) <> remainder end)
+    |> Enum.join(".")
+    |> String.to_atom
   end
 end

@@ -141,4 +141,40 @@ defmodule ProtobufTest do
     msg = AddViaHelper.Msg.new(f1: 10)
     assert %{:f1 => 5} = AddViaHelper.Msg.sub(msg, 5)
   end
+
+  test "normalize unconventional (lowercase) styles of named messages and enums" do
+    mod = def_proto_module "
+        message msgPackage {
+          enum msgResponseType {
+            NACK = 0;
+            ACK = 1;
+          }
+
+          message msgHeader {
+            required uint32 message_id = 0;
+            required msgResponseType response_type = 1;
+          }
+
+          required msgHeader header = 1;
+        }
+      "
+
+    assert 0 == mod.MsgPackage.MsgResponseType.value(:NACK)
+    assert 1 == mod.MsgPackage.MsgResponseType.value(:ACK)
+
+    assert :NACK == mod.MsgPackage.MsgResponseType.atom(0)
+    assert :ACK == mod.MsgPackage.MsgResponseType.atom(1)
+
+    msg_header = mod.MsgPackage.MsgHeader
+
+    assert %{:__struct__    => ^msg_header,
+             :response_type => :ACK,
+             :message_id    => 25 } = mod.MsgPackage.MsgHeader.new(response_type: :ACK, message_id: 25)
+
+    msg_package = mod.MsgPackage
+    nack_msg_header = mod.MsgPackage.MsgHeader.new(message_id: 1, response_type: :NACK)
+    nack_msg_package = mod.MsgPackage.new(header: msg_header)
+
+    assert %{:__struct__ => ^msg_package, :header => nack_msg_header} = mod.MsgPackage.new(header: nack_msg_header)
+  end
 end
