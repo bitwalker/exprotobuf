@@ -3,7 +3,7 @@ defmodule Protobuf.Mixfile do
 
   def project do
     [app: :exprotobuf,
-     version: "0.8.5",
+     version: "0.9.0",
      elixir: "~> 1.0.0",
      description: description,
      package: package,
