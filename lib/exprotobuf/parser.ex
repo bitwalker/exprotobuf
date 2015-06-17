@@ -5,7 +5,10 @@ defmodule Protobuf.Parser do
   end
 
   def parse(msgs),                             do: parse(msgs, [])
-  def parse(defs, options) when is_list(defs), do: :gpb_parse.post_process(defs, options)
+  def parse(defs, options) when is_list(defs) do
+    {:ok, defs} = :gpb_parse.post_process_one_file(defs, options)
+    :gpb_parse.post_process_all_files(defs, options)
+  end
   def parse(string, options) do
     case :gpb_scan.string('#{string}') do
       {:ok, tokens, _} ->

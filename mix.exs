@@ -16,7 +16,7 @@ defmodule Protobuf.Mixfile do
 
   defp description do
     """
-    exprotobuf provides native encoding/decoding of 
+    exprotobuf provides native encoding/decoding of
     protobuf messages via generated modules/structs.
     """
   end
@@ -29,6 +29,6 @@ defmodule Protobuf.Mixfile do
   end
 
   defp deps do
-    [{ :gpb, github: "tomas-abrahamsson/gpb" }]
+    [{:gpb, github: "tomas-abrahamsson/gpb", tag: "3.18.6"}]
   end
 end
