@@ -6,6 +6,7 @@ wire.
 
 [![Build Status](https://travis-ci.org/bitwalker/exprotobuf.svg?branch=master)](https://travis-
 ci.org/bitwalker/exprotobuf)
+[![Hex.pm Version](http://img.shields.io/hexpm/v/exprotobuf.svg?style=flat)](https://hex.pm/packages/exprotobuf)
 
 ## Features
 
@@ -25,8 +26,7 @@ Add exprotobuf as a dependency to your project:
 
 ```elixir
 defp deps do
-  [{:exprotobuf, "~> 0.8.5"},
-   {:gpb, github: "tomas-abrahamsson/gpb", tag: "3.17.2"}]
+  [{:exprotobuf, "~> 0.10.0"}]
 end
 ```
 
