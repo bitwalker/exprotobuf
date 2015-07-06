@@ -76,6 +76,12 @@ defmodule ProtobufTest do
 
     assert nil == mod.Version.atom(-1)
     assert nil == mod.Msg.MsgType.value(:OTHER)
+
+    assert [:V0_1, :V0_2] == mod.Version.atoms
+    assert [:START, :STOP] == mod.Msg.MsgType.atoms
+
+    assert [1, 2] == mod.Version.values
+    assert [1, 2] == mod.Msg.MsgType.values
   end
 
   test "support define from a file" do
