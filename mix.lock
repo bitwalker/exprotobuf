@@ -1,1 +1,1 @@
-%{"gpb": {:git, "git://github.com/tomas-abrahamsson/gpb.git", "17b8343093f22153c4473fad4df3e0934ef6d431", [tag: "3.18.6"]}}
+%{"gpb": {:hex, :gpb, "3.18.6"}}
