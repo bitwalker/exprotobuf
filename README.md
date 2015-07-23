@@ -26,7 +26,7 @@ Add exprotobuf as a dependency to your project:
 
 ```elixir
 defp deps do
-  [{:exprotobuf, "~> 0.10.1"}]
+  [{:exprotobuf, "~> 0.10.2"}]
 end
 ```
 
