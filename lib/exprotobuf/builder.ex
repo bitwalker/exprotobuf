@@ -74,15 +74,11 @@ defmodule Protobuf.Builder do
     end
 
     # Global defs helper
-    if inject do
-      quotes
-    else
-      quotes ++ [quote do
-        def defs do
-          unquote(Macro.escape(msgs, unquote: true))
-        end
-      end]
-    end
+    quotes ++ [quote do
+      def defs do
+        unquote(Macro.escape(msgs, unquote: true))
+      end
+    end]
   end
 
   defp is_child_type?(child, type) do

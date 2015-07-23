@@ -18,6 +18,20 @@ defmodule ProtobufTest do
     assert %{:__struct__ => ^msg2, :f1 => "foo"} = mod.Msg2.new(f1: "foo")
   end
 
+  test "define records in namespace with injection" do
+    contents = quote do
+      use Protobuf, ["
+       message InjectionTest {
+           required uint32 f1 = 1;
+       }
+      ", inject: true]
+    end
+
+    {:module, mod, _, _} = Module.create(InjectionTest, contents, Macro.Env.location(__ENV__))
+
+    assert %{:__struct__ => ^mod, :f1 => 1} = mod.new(f1: 1)
+  end
+
   test "set default value for nil is optional" do
     mod = def_proto_module "message Msg { optional uint32 f1 = 1; }"
     msg = mod.Msg.new()
