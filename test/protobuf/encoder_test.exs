@@ -2,8 +2,8 @@ defmodule Protobuf.Encoder.Test do
   use Protobuf.Case
   alias Protobuf.Encoder, as: E
 
-  setup_all do
-    {:ok, mod: def_proto_module "
+  defmodule EncoderProto do
+    use Protobuf, """
       message Msg {
         required int32 f1 = 1;
         optional int32 f2 = 2;
@@ -35,31 +35,54 @@ defmodule Protobuf.Encoder.Test do
 
         required Version version = 1;
       }
-    "}
+      """
   end
 
-  test "fixing nil values to :undefined", var do
-    mod = var[:mod]
-    msg = mod.Msg.new(f1: 150)
-    assert <<8, 150, 1>> == E.encode(msg, mod.Msg.defs)
-    assert <<10, 3, 8, 150, 1>> == E.encode(mod.WithSubMsg.new(f1: msg), mod.Msg.defs)
+  #defmodule ExtensionsProto do
+    #use Protobuf, """
+    #message Msg {
+      #extensions 200 to max;
+      #optional string name = 1;
+    #}
+    #extend Msg {
+      #optional string pseudonym = 200;
+    #}
+    #"""
+  #end
+
+  test "fixing nil values to :undefined" do
+    msg = EncoderProto.Msg.new(f1: 150)
+    assert <<8, 150, 1>> == E.encode(msg, EncoderProto.Msg.defs)
+    assert <<10, 3, 8, 150, 1>> == E.encode(EncoderProto.WithSubMsg.new(f1: msg), EncoderProto.Msg.defs)
   end
 
-  test "fixing a nil value in repeated submsg", var do
-    mod = var[:mod]
-    msg = mod.WithRepeatedSubMsg.new(f1: [mod.Msg.new(f1: 1)])
-    assert <<10, 2, 8, 1>> == E.encode(msg, mod.WithRepeatedSubMsg.defs)
+  test "fixing a nil value in repeated submsg" do
+    msg = EncoderProto.WithRepeatedSubMsg.new(f1: [EncoderProto.Msg.new(f1: 1)])
+    assert <<10, 2, 8, 1>> == E.encode(msg, EncoderProto.WithRepeatedSubMsg.defs)
   end
 
-  test "fixing lowercase message and enum references", var do
-    mod = var[:mod]
-    msg = mod.ExtraMsg.new(type: :ACK, message: [mod.Msg.new(f1: 1)])
-    assert <<8, 1, 18, 2, 8, 1>> == E.encode(msg, mod.ExtraMsg.defs)
+  test "fixing lowercase message and enum references" do
+    msg = EncoderProto.ExtraMsg.new(type: :ACK, message: [EncoderProto.Msg.new(f1: 1)])
+    assert <<8, 1, 18, 2, 8, 1>> == E.encode(msg, EncoderProto.ExtraMsg.defs)
   end
 
-  test "encodes enums", var do
-    mod = var[:mod]
-    msg = mod.WithEnum.new(version: :'V1')
-    assert <<8, 1>> == E.encode(msg, mod.WithEnum.defs)
+  test "encodes enums" do
+    msg = EncoderProto.WithEnum.new(version: :'V1')
+    assert <<8, 1>> == E.encode(msg, EncoderProto.WithEnum.defs)
   end
+
+  #test "it can create an extended message" do
+    #msg = ExtensionsProto.Msg.new(name: "Ron", pseudonym: "Duke Silver")
+    #assert msg == %ExtensionsProto.Msg{name: "Ron", pseudonym: "Duke Silver"}
+  #end
+
+  #test "it can encode an extended message" do
+    #msg = ExtensionsProto.Msg.new(name: "Ron", pseudonym: "Duke Silver")
+    #assert ExtensionsProto.Msg.encode(msg) == <<10, 3, 82, 111, 110, 194, 12, 11, 68, 117, 107, 101, 32, 83, 105, 108, 118, 101, 114>>
+  #end
+
+  #test "it can decode an extended message" do
+    #encoded = <<10, 3, 82, 111, 110, 194, 12, 11, 68, 117, 107, 101, 32, 83, 105, 108, 118, 101, 114>>
+    #assert ExtensionsProto.Msg.decode(encoded) == %ExtensionsProto.Msg{name: "Ron", pseudonym: "Duke Silver"}
+  #end
 end
