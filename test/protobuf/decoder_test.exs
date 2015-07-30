@@ -78,6 +78,46 @@ defmodule Protobuf.Decoder.Test do
     assert ^msg = decoded
   end
 
+  test "extensions" do
+    defmodule ExtensionsProto do
+      use Protobuf, """
+        message Regular {
+          required string foo = 1;
+        }
+
+        message Extended {
+          required string foo = 1;
+          extensions 1000 to 1999;
+        }
+
+        extend Extended {
+          optional int32 bar = 1003;
+        }
+      """
+    end
+
+    # for comparison, an extended schema vs an unextended schema.
+
+    # here's the unextended one, note we lose bar:
+    reg = ExtensionsProto.Regular.new(foo: "hello", bar: 12)
+    assert reg.foo == "hello"
+    catch_error(reg.bar) # Regular was not extended.
+
+    reg_encoded = ExtensionsProto.Regular.encode(reg)
+    reg_decoded = ExtensionsProto.Regular.decode(reg_encoded)
+    assert ^reg = reg_decoded
+
+    # here's the extended one, note we keep bar even though it's defined outside of the initial definition
+    ex = ExtensionsProto.Extended.new(foo: "hello", bar: 12)
+    assert ex.foo == "hello"
+    assert ex.bar == 12
+
+    ex_encoded = ExtensionsProto.Extended.encode(ex)
+    ex_decoded = ExtensionsProto.Extended.decode(ex_encoded)
+    assert ^ex = ex_decoded
+
+  end
+
   test "complex proto decoding" do
     defmodule MumbleProto do
       use Protobuf, from: Path.expand("../proto/mumble.proto", __DIR__)
