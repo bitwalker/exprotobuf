@@ -7,6 +7,7 @@ defmodule Protobuf.Encoder do
       case type do
         :msg  -> {{:msg, mod}, Enum.map(fields, fn field -> field |> Utils.convert_to_record(Field) end)}
         :enum -> {{:enum, mod}, fields}
+        :extensions -> {{:extensions, mod}, fields}
       end
     end
 
