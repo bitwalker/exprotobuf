@@ -53,7 +53,7 @@ defmodule Protobuf.Decoder.Test do
     bytes = <<10, 1, 97, 18, 5, 10, 3, 97, 98, 99>>
     assert %{:__struct__ => ^module, :f1 => "a", :f2 => %{:__struct__ => ^submod, :f1 => "abc"}} = D.decode(bytes, FixingStringValuesProto.Msg)
   end
-
+  
   test "enums" do
     defmodule EnumsProto do
       use Protobuf, """
