@@ -22,6 +22,20 @@ defmodule Protobuf.Parse.Test do
     assert {:enum, :"Msg.Type"} == elem(field, 4)
   end
 
+  test "parse imports" do
+    import_dir = Path.join("test", "proto") |> Path.expand
+    proto      = File.read!(Path.join(import_dir, "import.proto"))
+    expected = [{:package, :chat},
+                {:option, [:java_package], 'com.appunite.chat'},
+                {:import, 'imported.proto'},
+                {{:msg, :WebsocketServerContainer}, [{:field, :authorization, 1, 2, :string, :required, []}]},
+                {:package, :authorization},
+                {:option, [:java_package], 'com.appunite.chat'},
+                {{:msg, :WrongAuthorizationHttpMessage}, [{:field, :reason, 1, 2, :string, :required, []}]},
+                {{:msg, :AuthorizationServerMessage}, [{:field, :next_synchronization_token, 1, 2, :string, :required, []}]}]
+    assert expected == Parser.parse!(proto, [imports: [import_dir]])
+  end
+
   test "return erro for parse error" do
     {result, _} = Parser.parse("message ;")
     assert :error == result

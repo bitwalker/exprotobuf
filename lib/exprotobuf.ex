@@ -23,20 +23,20 @@ defmodule Protobuf do
           [_type]  -> %Config{namespace: namespace, schema: schema, only: types, inject: true}
         end
       from: file ->
-        %Config{namespace: namespace, schema: read_file(file, __CALLER__)}
+        %Config{namespace: namespace, schema: read_file(file, __CALLER__), from_file: file}
       [from: file, only: only] ->
-        %Config{namespace: namespace, schema: read_file(file, __CALLER__), only: parse_only(only, __CALLER__)}
+        %Config{namespace: namespace, schema: read_file(file, __CALLER__), only: parse_only(only, __CALLER__), from_file: file}
       [from: file, inject: true] ->
-        %Config{namespace: namespace, schema: read_file(file, __CALLER__), only: [namespace], inject: true}
+        %Config{namespace: namespace, schema: read_file(file, __CALLER__), only: [namespace], inject: true, from_file: file}
       [from: file, only: only, inject: true] ->
         types = parse_only(only, __CALLER__)
         case types do
           []       -> raise ConfigError, error: "You must specify a type using :only when combined with inject: true"
-          [_type]  -> %Config{namespace: namespace, schema: read_file(file, __CALLER__), only: types, inject: true}
+          [_type]  -> %Config{namespace: namespace, schema: read_file(file, __CALLER__), only: types, inject: true, from_file: file}
         end
     end
 
-    config |> parse |> Builder.define(config)
+    config |> parse(__CALLER__) |> Builder.define(config)
   end
 
   # Read the file passed to :from
@@ -56,8 +56,14 @@ defmodule Protobuf do
   end
 
   # Parse and fix namespaces of parsed types
-  defp parse(%Config{namespace: ns, schema: schema, inject: inject}) do
+  defp parse(%Config{namespace: ns, schema: schema, inject: inject, from_file: nil}, _) do
     Parser.parse!(schema) |> namespace_types(ns, inject)
+  end
+  defp parse(%Config{namespace: ns, schema: schema, inject: inject, from_file: file}, caller) do
+    {path, _} = Code.eval_quoted(file, [], caller)
+    path      = Path.expand(path) |> Path.dirname
+    opts      = [imports: [path]]
+    Parser.parse!(schema, opts) |> namespace_types(ns, inject)
   end
 
   # Apply namespace to top-level types

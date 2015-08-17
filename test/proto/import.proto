@@ -1,0 +1,10 @@
+package chat;
+
+option java_package = "com.appunite.chat";
+
+import "imported.proto";
+
+// From server to client
+message WebsocketServerContainer {
+      required string authorization = 1;
+}
