@@ -31,6 +31,6 @@ defmodule Protobuf.Mixfile do
   defp deps do
     [{:gpb, "~> 3.18.6"},
      {:earmark, "~> 0.1", only: :dev},
-     {:ex_doc, "~> 0.5", only: :dev}]
+     {:ex_doc, "~> 0.9", only: :dev}]
   end
 end
