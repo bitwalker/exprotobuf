@@ -104,17 +104,20 @@ defmodule Protobuf.DefineMessage do
   end
 
   defp record_fields(fields) do
-    for %Field{name: name, occurrence: occurrence} <- fields do
-      {name, case occurrence do
-        :repeated -> []
-        _ -> nil
-      end}
-    end
-    ++
-    for %OneOfField{name: name} <- fields do
-      {name, nil}
-    end
-
+    fields
+    |> Enum.map(fn(field) ->
+      case field do
+        %Field{name: name, occurrence: :repeated} ->
+          {name, []}
+        %Field{name: name} ->
+          {name, nil}
+        %OneOfField{name: name} ->
+          {name, nil}
+        _ ->
+          nil
+      end
+    end)
+    |> Enum.reject(fn(field) -> is_nil(field) end)
   end
 
 end
