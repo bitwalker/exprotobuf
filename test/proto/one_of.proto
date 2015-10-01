@@ -1,0 +1,21 @@
+message SubMsg {
+	required string test = 1;
+}
+
+message SampleOneofMsg {
+  optional string one = 1;
+
+  oneof foo {
+    string body = 3;
+    uint32 code = 4;
+  }
+}
+
+message AdvancedOneofMsg {
+  optional SubMsg one = 1;
+
+  oneof foo {
+    SubMsg body = 3;
+    uint32 code = 4;
+  }
+}

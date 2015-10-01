@@ -1,5 +1,4 @@
 Code.require_file "./utils/gpb_compile_helper.exs", __DIR__
-
 ExUnit.start
 
 defmodule Protobuf.Case do

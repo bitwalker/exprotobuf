@@ -1,26 +1,27 @@
 defmodule Protobuf.Utils do
   @moduledoc false
+  alias Protobuf.OneOfField
+  alias Protobuf.Field
 
   def convert_to_record(map, module) do
-    # Convert module name if necessary
-    record_name = case module do
-      Protobuf.Field -> :field
-      _              -> module
-    end
-    # Convert the map to it's record representation by
-    # using the record schema originally extracted and
-    # defined in the module provided. For each field
-    # defined in the schema, get that field from the map,
-    # then add it to a list of values matching the record's
-    # original order. Convert that list to a tuple when done.
     module.record
-    |> Enum.reduce([record_name], fn {key, default}, acc ->
+    |> Enum.reduce([record_name(module)], fn {key, default}, acc ->
       value = Map.get(map, key, default)
-      [value|acc]
+      [value_transform(module, value) | acc]
     end)
     |> Enum.reverse
     |> List.to_tuple
   end
+
+  defp record_name(OneOfField), do: :gpb_oneof
+  defp record_name(Field), do: :field
+  defp record_name(type), do: type
+
+  defp value_transform(OneOfField = module, value) when is_list(value) do
+    Enum.map(value, &convert_to_record(&1, Field))
+  end
+  defp value_transform(module, value), do: value
+
 
   def convert_from_record(rec, module) do
     map = struct(module)

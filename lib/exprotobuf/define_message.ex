@@ -4,6 +4,7 @@ defmodule Protobuf.DefineMessage do
   alias Protobuf.Decoder
   alias Protobuf.Encoder
   alias Protobuf.Field
+  alias Protobuf.OneOfField
 
   def def_message(name, fields, inject: inject) when is_list(fields) do
     struct_fields = record_fields(fields)
@@ -19,6 +20,7 @@ defmodule Protobuf.DefineMessage do
 
         unquote(encode_decode(name))
         unquote(fields_methods(fields))
+        unquote(oneof_fields_methods(fields))
         unquote(meta_information)
         unquote(constructors(name))
       end
@@ -38,6 +40,7 @@ defmodule Protobuf.DefineMessage do
 
           unquote(encode_decode(name))
           unquote(fields_methods(fields))
+          unquote(oneof_fields_methods(fields))
           unquote(meta_information)
 
           unquote(constructors(name))
@@ -82,6 +85,15 @@ defmodule Protobuf.DefineMessage do
     end
   end
 
+  defp oneof_fields_methods(fields) do
+    for %OneOfField{name: name, rnum: rnum} = field <- fields do
+      quote location: :keep do
+        def defs(:field, unquote(rnum)), do: unquote(Macro.escape(field))
+        def defs(:field, unquote(name)), do: defs(:field, unquote(rnum))
+      end
+    end
+  end
+
   defp meta_information do
     quote do
       def defs,                   do: @root.defs
@@ -98,6 +110,11 @@ defmodule Protobuf.DefineMessage do
         _ -> nil
       end}
     end
+    ++
+    for %OneOfField{name: name} <- fields do
+      {name, nil}
+    end
+
   end
 
 end

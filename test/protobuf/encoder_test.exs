@@ -37,7 +37,7 @@ defmodule Protobuf.Encoder.Test do
       }
       """
   end
-
+  
   #defmodule ExtensionsProto do
     #use Protobuf, """
     #message Msg {

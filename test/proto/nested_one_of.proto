@@ -1,0 +1,37 @@
+message Container {
+  optional string hello = 1;
+
+  oneof msg {
+      Foo foo = 2;
+      Bar bar = 3;
+  }
+}
+
+message Foo {
+    required bytes foo_id = 1; // conversation id
+    required uint64 created_at = 2; // creation time of conversation in milliseconds
+    required FooMetadata metadata = 3; // conversation metadata
+}
+
+message FooMetadata {
+    oneof type {
+        GroupFooMetadata group_metadata = 1; // group metadata info
+        SingleFooMetadata single_metadata = 2; // single conv info
+    }
+}
+
+message GroupFooMetadata {
+    repeated string baz_ids = 1;
+
+    optional string avatat = 2;
+    required string name = 3;
+    required string foo_owner = 4;
+}
+
+message SingleFooMetadata {
+    required string baz_id = 1;
+}
+
+message Bar {
+    required string msg = 1;
+}
