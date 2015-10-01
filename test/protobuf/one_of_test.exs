@@ -59,4 +59,19 @@ defmodule Protobuf.Oneof.Test do
     assert %Msgs.AdvancedOneofMsg{foo: {:body,  Msgs.SubMsg.new(test: "yyy")}, one: Msgs.SubMsg.new(test: "xxx")} == msg
   end
 
+  test "can encode one_of protos with one_of field on first position" do
+    msg = Msgs.ReversedOrderOneOfMsg.new(foo: {:code, 32}, bar: "hi")
+    enc_msg = Msgs.ReversedOrderOneOfMsg.encode(msg)
+
+    assert is_binary(enc_msg)
+  end
+
+  test "can decode one_of protos with one_of field on first position" do
+    enc_msg= <<16, 32, 26, 2, 104, 105>>
+    dec_msg = Msgs.ReversedOrderOneOfMsg.decode(enc_msg)
+
+    assert Msgs.ReversedOrderOneOfMsg.new(foo: {:code, 32}, bar: "hi") == dec_msg
+  end
+
+
 end
