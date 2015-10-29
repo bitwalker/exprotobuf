@@ -23,7 +23,7 @@ defmodule Protobuf.Mixfile do
 
   defp package do
     [ files: ["lib", "mix.exs", "README.md", "LICENSE"],
-      contributors: ["Paul Schoenfelder", "azukiaapp"],
+      maintainers: ["Paul Schoenfelder"],
       licenses: ["Apache Version 2.0"],
       links: %{"GitHub": "https://github.com/bitwalker/exprotobuf"} ]
   end
