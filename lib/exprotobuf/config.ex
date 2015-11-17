@@ -17,5 +17,5 @@ defmodule Protobuf.Config do
             schema: "",
             only: [],
             inject: false,
-            from_file: nil
+            from_file: []
 end
