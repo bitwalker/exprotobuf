@@ -1,0 +1,11 @@
+package broker;
+import "util.proto";
+
+message Exchange {
+  extensions 200 to max;
+  optional string id = 1;
+}
+
+extend Exchange {
+  repeated Error errors = 200;
+}
