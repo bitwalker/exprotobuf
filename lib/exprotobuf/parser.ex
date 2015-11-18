@@ -7,7 +7,7 @@ defmodule Protobuf.Parser do
   def parse(msgs),                             do: parse(msgs, [])
   def parse(defs, options) when is_list(defs) do
     {:ok, defs} = :gpb_parse.post_process_one_file(defs, options)
-    imports = :gpb_parse.fetch_imports(defs)
+    imports = [] # TODO remove this feature entirely if we are going to replace it with imorting multiple files
     case read_and_parse_imports(imports, [], defs, options) do
       {:ok, {defs, _}} ->
         :gpb_parse.post_process_all_files(defs, options)
