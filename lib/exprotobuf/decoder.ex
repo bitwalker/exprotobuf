@@ -17,6 +17,7 @@ defmodule Protobuf.Decoder do
           end)}
         :enum       -> {{:enum, mod}, fields}
         :extensions -> {{:extensions, mod}, fields}
+        :service -> {{:service, mod}, fields}
       end
     end
     :gpb.decode_msg(bytes, module, defs)
