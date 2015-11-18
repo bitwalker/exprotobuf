@@ -22,6 +22,7 @@ defmodule Protobuf.Parse.Test do
     assert {:enum, :"Msg.Type"} == elem(field, 4)
   end
 
+  @tag :skip # this behavior is replaced by the ability to pass a list of files in the `from:` option
   test "parse imports" do
     import_dir = Path.join("test", "proto") |> Path.expand
     proto      = File.read!(Path.join(import_dir, "import.proto"))

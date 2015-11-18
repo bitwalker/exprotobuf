@@ -126,7 +126,7 @@ defmodule Protobuf.Decoder.Test do
       use Protobuf, from: Path.expand("../proto/mumble.proto", __DIR__)
     end
 
-    msg = MumbleProto.Authenticate.new(username: "bitwalker")
+    msg = MumbleProto.MumbleProto.Authenticate.new(username: "bitwalker")
     assert %{username: "bitwalker", password: nil, tokens: []} = msg
   end
 end

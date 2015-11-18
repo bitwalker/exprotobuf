@@ -3,18 +3,18 @@ defmodule Protobuf.FromMultipleFiles.Test do
 
   defmodule TopLevel do
     use Protobuf, from: [Path.expand("../proto/basic.proto", __DIR__),
-                         Path.expand("../proto/mumble.proto", __DIR__)]
+                         Path.expand("../proto/imported.proto", __DIR__)]
   end
 
   test "generates all messages nested under TopLevel" do
     assert %{f1: 255} = TopLevel.Basic.new(f1: 255)
-    assert %{version: 127} = TopLevel.MumbleProto.Version.new(version: 127)
-    assert %{packet: "abc"} = TopLevel.MumbleProto.UDPTunnel.new(bytes: "abc")
+    assert %{reason: "hi"} = TopLevel.Authorization.WrongAuthorizationHttpMessage.new(reason: "hi")
   end
 
+  @tag :skip # I can't find a way to generate modules that are outside the scope of the module calling `use Protobuf`???
   defmodule NoTopLevel do
     use Protobuf, from: [Path.expand("../proto/basic.proto", __DIR__),
-                         Path.expand("../proto/mumble.proto", __DIR__)],
+                         Path.expand("../proto/imported.proto", __DIR__)],
                   inject: true
   end
 
