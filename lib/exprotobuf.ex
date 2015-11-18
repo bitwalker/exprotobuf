@@ -28,7 +28,7 @@ defmodule Protobuf do
       [from: file, only: only] ->
         %Config{namespace: namespace, schema: nil, only: parse_only(only, __CALLER__), from_file: file}
       [from: file, inject: true] ->
-        %Config{namespace: namespace, schema: nil, only: [namespace], inject: true, from_file: file}
+        %Config{namespace: namespace, schema: nil, inject: true, from_file: file}
       [from: file, only: only, inject: true] ->
         types = parse_only(only, __CALLER__)
         case types do
@@ -68,11 +68,7 @@ defmodule Protobuf do
   defp namespace_types(parsed, ns, inject) do
     prefix = namespace_prefix(parsed, ns, inject)
     for {{type, name}, fields} <- parsed do
-      if inject do
-        {{type, normalize_name(prefix, name)}, namespace_fields(type, fields, prefix)}
-      else
-        {{type, normalize_name(prefix, name)}, namespace_fields(type, fields, prefix)}
-      end
+      {{type, normalize_name(prefix, name)}, namespace_fields(type, fields, prefix)}
     end
   end
 
@@ -95,7 +91,7 @@ defmodule Protobuf do
     field |> Map.put(:fields, Enum.map(field.fields, &namespace_fields(&1, prefix)))
   end
 
-  defp namespace_prefix(parsed, _ns, true), do: namespace_prefix(parsed)
+  defp namespace_prefix(parsed, _ns, true), do: ["Elixir"] ++ namespace_prefix(parsed)
   defp namespace_prefix(parsed, ns, false), do: [Atom.to_string(ns)] ++ namespace_prefix(parsed)
   defp namespace_prefix([{:package, package}|_rest]) do
     package
