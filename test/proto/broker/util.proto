@@ -1,6 +1,0 @@
-package broker;
-
-message Error {
-  optional string field = 1;
-  optional string message = 2;
-}
