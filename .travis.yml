@@ -4,8 +4,8 @@ elixir:
   - 1.0
   - 1.1
 otp_release:
-  - 17.0
-  - 17.1
+  - 17
+  - 18
 env:
   - MIX_ENV=all
 notifications:
