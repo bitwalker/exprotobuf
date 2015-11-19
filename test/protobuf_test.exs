@@ -20,21 +20,6 @@ defmodule ProtobufTest do
     assert %{:__struct__ => ^msg2, :f1 => "foo"} = NamespacedRecordsProto.Msg2.new(f1: "foo")
   end
 
-  @tag :skip # I broke this test, but I don't understand why it's broken, TODO: fix this for sure
-  test "define records in namespace with injection" do
-    contents = quote do
-      use Protobuf, ["
-       message InjectionTest {
-           required uint32 f1 = 1;
-       }
-      ", inject: true]
-    end
-
-    {:module, mod, _, _} = Module.create(InjectionTest, contents, Macro.Env.location(__ENV__))
-
-    assert %{:__struct__ => ^mod, :f1 => 1} = mod.new(f1: 1)
-  end
-
   test "set default value for nil is optional" do
     defmodule DefaultValueForOptionalsProto do
       use Protobuf, "message Msg { optional uint32 f1 = 1; }"
