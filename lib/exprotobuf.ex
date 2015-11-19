@@ -91,8 +91,8 @@ defmodule Protobuf do
     field |> Map.put(:fields, Enum.map(field.fields, &namespace_fields(&1, prefix)))
   end
 
-  defp namespace_prefix(parsed, _ns, true), do: ["Elixir"] ++ namespace_prefix(parsed)
-  defp namespace_prefix(parsed, ns, false), do: [Atom.to_string(ns)] ++ namespace_prefix(parsed)
+  defp namespace_prefix(parsed, _ns, true), do: ["Elixir" | namespace_prefix(parsed)]
+  defp namespace_prefix(parsed, ns, false), do: [Atom.to_string(ns) | namespace_prefix(parsed)]
   defp namespace_prefix([{:package, package}|_rest]) do
     package
     |> Atom.to_string
