@@ -14,6 +14,7 @@ defmodule Protobuf.Encoder do
         end)}
         :enum -> {{:enum, mod}, fields}
         :extensions -> {{:extensions, mod}, fields}
+        :service -> {{:service, mod}, fields}
       end
     end
 

@@ -9,6 +9,9 @@ defmodule Protobuf.Decoder.Test do
           optional int32 f1 = 1;
           required int32 f2 = 2;
         }
+        service MsgService {
+          rpc hi(Msg) returns (Msg);
+        }
         """
     end
 

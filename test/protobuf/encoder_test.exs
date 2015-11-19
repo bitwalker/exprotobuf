@@ -35,6 +35,10 @@ defmodule Protobuf.Encoder.Test do
 
         required Version version = 1;
       }
+
+      service HelloService {
+        rpc hello (Msg) returns (Msg);
+      }
       """
   end
   
