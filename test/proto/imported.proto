@@ -4,10 +4,15 @@ option java_package = "com.appunite.chat";
 
 // Message that is sent via server if authorization fail (sent via HTTP)
 message WrongAuthorizationHttpMessage {
-    required string reason = 1; // reason why authorization fail
+  required string reason = 1; // reason why authorization fail
 }
 
 // Message that is sent via server if authorization fail
 message AuthorizationServerMessage {
-    required string next_synchronization_token = 1; // token that should be sent to server next time synchronization occure
+  required string next_synchronization_token = 1; // token that should be sent to server next time synchronization occure
+}
+
+message Failure {
+  optional uint32 status_code = 1;
+  optional string reason = 2;
 }
