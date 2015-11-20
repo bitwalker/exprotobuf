@@ -52,16 +52,11 @@ defmodule Protobuf do
 
   # Parse and fix namespaces of parsed types
   defp parse(%Config{namespace: ns, schema: schema, inject: inject, from_file: nil}, _) do
-    Parser.parse!(schema) |> namespace_types(ns, inject)
+    Parser.parse_string!(schema) |> namespace_types(ns, inject)
   end
   defp parse(%Config{namespace: ns, inject: inject, from_file: file}, caller) do
     {paths, import_dirs} = resolve_paths(file, caller)
-
-    Enum.reduce(paths, [], fn(path, defs) ->
-      schema = File.read!(path)
-      new_defs = Parser.parse!(schema, [imports: import_dirs]) |> namespace_types(ns, inject)
-      defs ++ new_defs
-    end)
+    Parser.parse_files!(paths, import_dirs, [imports: import_dirs]) |> namespace_types(ns, inject)
   end
 
   # Apply namespace to top-level types
