@@ -23,6 +23,10 @@ defmodule Protobuf.DefineMessage do
         unquote(oneof_fields_methods(fields))
         unquote(meta_information)
         unquote(constructors(name))
+
+        defimpl Protobuf.Serializable do
+          def serialize(object), do: unquote(name).encode(object)
+        end
       end
     # Or create a nested module, with use_in functionality
     else
@@ -47,6 +51,10 @@ defmodule Protobuf.DefineMessage do
 
           if use_in != nil do
             Module.eval_quoted(__MODULE__, use_in, [], __ENV__)
+          end
+
+          defimpl Protobuf.Serializable do
+            def serialize(object), do: unquote(name).encode(object)
           end
         end
       end

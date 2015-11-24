@@ -1,6 +1,5 @@
 defmodule Protobuf.Encoder.Test do
   use Protobuf.Case
-  alias Protobuf.Encoder, as: E
 
   defmodule EncoderProto do
     use Protobuf, """
@@ -56,23 +55,23 @@ defmodule Protobuf.Encoder.Test do
 
   test "fixing nil values to :undefined" do
     msg = EncoderProto.Msg.new(f1: 150)
-    assert <<8, 150, 1>> == E.encode(msg, EncoderProto.Msg.defs)
-    assert <<10, 3, 8, 150, 1>> == E.encode(EncoderProto.WithSubMsg.new(f1: msg), EncoderProto.Msg.defs)
+    assert <<8, 150, 1>> == Protobuf.Serializable.serialize(msg)
+    assert <<10, 3, 8, 150, 1>> == Protobuf.Serializable.serialize(EncoderProto.WithSubMsg.new(f1: msg))
   end
 
   test "fixing a nil value in repeated submsg" do
     msg = EncoderProto.WithRepeatedSubMsg.new(f1: [EncoderProto.Msg.new(f1: 1)])
-    assert <<10, 2, 8, 1>> == E.encode(msg, EncoderProto.WithRepeatedSubMsg.defs)
+    assert <<10, 2, 8, 1>> == Protobuf.Serializable.serialize(msg)
   end
 
   test "fixing lowercase message and enum references" do
     msg = EncoderProto.ExtraMsg.new(type: :ACK, message: [EncoderProto.Msg.new(f1: 1)])
-    assert <<8, 1, 18, 2, 8, 1>> == E.encode(msg, EncoderProto.ExtraMsg.defs)
+    assert <<8, 1, 18, 2, 8, 1>> == Protobuf.Serializable.serialize(msg)
   end
 
   test "encodes enums" do
     msg = EncoderProto.WithEnum.new(version: :'V1')
-    assert <<8, 1>> == E.encode(msg, EncoderProto.WithEnum.defs)
+    assert <<8, 1>> == Protobuf.Serializable.serialize(msg)
   end
 
   #test "it can create an extended message" do

@@ -8,7 +8,7 @@ defmodule Protobuf.NestedOneof.Test do
   test "can encode nested one_of proto" do
     bar = Msgs.Bar.new msg: "msg"
     c = Msgs.Container.new hello: "hello", msg: {:bar, bar}
-    enc_c = c |> Msgs.Container.encode
+    enc_c = Protobuf.Serializable.serialize(c)
 
     assert is_binary(enc_c)
   end
@@ -25,7 +25,7 @@ defmodule Protobuf.NestedOneof.Test do
     fm = Msgs.FooMetadata.new type: {:single_metadata, sfm}
     foo = Msgs.Foo.new foo_id: "foo_id", created_at: 0, metadata: fm
     c = Msgs.Container.new msg: {:foo, foo}
-    enc_c = c |> Msgs.Container.encode
+    enc_c = Protobuf.Serializable.serialize(c)
 
     assert is_binary(enc_c)
   end
