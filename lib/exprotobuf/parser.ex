@@ -4,10 +4,10 @@ defmodule Protobuf.Parser do
     defexception [:message]
   end
 
-  def parse_files!(files, import_dirs, options \\ []) do
+  def parse_files!(files, options \\ []) do
     Enum.reduce(files, [], fn(path, defs) ->
       schema = File.read!(path)
-      new_defs = parse!(schema, [imports: import_dirs])
+      new_defs = parse!(schema, options)
       defs ++ new_defs
     end) |> finalize!(options)
   end
