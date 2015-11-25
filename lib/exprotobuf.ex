@@ -88,13 +88,6 @@ defmodule Protobuf do
 
   defp namespace_prefix(parsed, _ns, true), do: ["Elixir" | namespace_prefix(parsed)]
   defp namespace_prefix(parsed, ns, false), do: [Atom.to_string(ns) | namespace_prefix(parsed)]
-  defp namespace_prefix([{:package, package}|_rest]) do
-    package
-    |> Atom.to_string
-    |> String.split(".")
-    |> Enum.map(fn(x) -> String.split_at(x, 1) end)
-    |> Enum.map(fn({first, remainder}) -> String.upcase(first) <> remainder end)
-  end
   defp namespace_prefix(_), do: []
 
   # Normalizes module names by ensuring they are cased correctly
