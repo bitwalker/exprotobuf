@@ -11,7 +11,7 @@ defmodule Protobuf.Mixfile do
   end
 
   def application do
-    [applications: []]
+    [applications: [:gpb]]
   end
 
   defp description do
