@@ -40,18 +40,18 @@ defmodule Protobuf.Encoder.Test do
       }
       """
   end
-  
-  #defmodule ExtensionsProto do
-    #use Protobuf, """
-    #message Msg {
-      #extensions 200 to max;
-      #optional string name = 1;
-    #}
-    #extend Msg {
-      #optional string pseudonym = 200;
-    #}
-    #"""
-  #end
+
+  defmodule ExtensionsProto do
+    use Protobuf, """
+    message Msg {
+      extensions 200 to max;
+      optional string name = 1;
+    }
+    extend Msg {
+      optional string pseudonym = 200;
+    }
+    """
+  end
 
   test "fixing nil values to :undefined" do
     msg = EncoderProto.Msg.new(f1: 150)
@@ -74,18 +74,18 @@ defmodule Protobuf.Encoder.Test do
     assert <<8, 1>> == Protobuf.Serializable.serialize(msg)
   end
 
-  #test "it can create an extended message" do
-    #msg = ExtensionsProto.Msg.new(name: "Ron", pseudonym: "Duke Silver")
-    #assert msg == %ExtensionsProto.Msg{name: "Ron", pseudonym: "Duke Silver"}
-  #end
+  test "it can create an extended message" do
+    msg = ExtensionsProto.Msg.new(name: "Ron", pseudonym: "Duke Silver")
+    assert msg == %ExtensionsProto.Msg{name: "Ron", pseudonym: "Duke Silver"}
+  end
 
-  #test "it can encode an extended message" do
-    #msg = ExtensionsProto.Msg.new(name: "Ron", pseudonym: "Duke Silver")
-    #assert ExtensionsProto.Msg.encode(msg) == <<10, 3, 82, 111, 110, 194, 12, 11, 68, 117, 107, 101, 32, 83, 105, 108, 118, 101, 114>>
-  #end
+  test "it can encode an extended message" do
+    msg = ExtensionsProto.Msg.new(name: "Ron", pseudonym: "Duke Silver")
+    assert ExtensionsProto.Msg.encode(msg) == <<10, 3, 82, 111, 110, 194, 12, 11, 68, 117, 107, 101, 32, 83, 105, 108, 118, 101, 114>>
+  end
 
-  #test "it can decode an extended message" do
-    #encoded = <<10, 3, 82, 111, 110, 194, 12, 11, 68, 117, 107, 101, 32, 83, 105, 108, 118, 101, 114>>
-    #assert ExtensionsProto.Msg.decode(encoded) == %ExtensionsProto.Msg{name: "Ron", pseudonym: "Duke Silver"}
-  #end
+  test "it can decode an extended message" do
+    encoded = <<10, 3, 82, 111, 110, 194, 12, 11, 68, 117, 107, 101, 32, 83, 105, 108, 118, 101, 114>>
+    assert ExtensionsProto.Msg.decode(encoded) == %ExtensionsProto.Msg{name: "Ron", pseudonym: "Duke Silver"}
+  end
 end

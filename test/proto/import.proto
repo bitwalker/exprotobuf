@@ -6,5 +6,6 @@ import "imported.proto";
 
 // From server to client
 message WebsocketServerContainer {
-      required string authorization = 1;
+  required string authorization = 1;
+  optional authorization.Failure failure = 2;
 }
