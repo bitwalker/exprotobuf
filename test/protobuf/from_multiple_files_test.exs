@@ -12,4 +12,17 @@ defmodule Protobuf.FromMultipleFiles.Test do
     assert %{f1: 255} = TopLevel.Basic.new(f1: 255)
     assert %{authorization: "please?"} = TopLevel.WebsocketServerContainer.new(authorization: "please?")
   end
+
+  test "prefixs module names with the package names" do
+    defmodule WithPackageNames do
+      use Protobuf, from: [Path.expand("../proto/basic.proto", __DIR__),
+                           Path.expand("../proto/import.proto", __DIR__),
+                           Path.expand("../proto/imported.proto", __DIR__)],
+                    use_package_names: true
+    end
+
+    assert %{reason: "hi"} = WithPackageNames.Authorization.WrongAuthorizationHttpMessage.new(reason: "hi")
+    assert %{f1: 255} = WithPackageNames.Basic.new(f1: 255)
+    assert %{authorization: "please?"} = WithPackageNames.Chat.WebsocketServerContainer.new(authorization: "please?")
+  end
 end
