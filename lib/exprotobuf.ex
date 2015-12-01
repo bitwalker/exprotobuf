@@ -24,26 +24,20 @@ defmodule Protobuf do
           [_type]  -> %Config{namespace: namespace, schema: schema, only: types, inject: true}
         end
       from: file ->
-        %Config{namespace: namespace, schema: read_file(file, __CALLER__), from_file: file}
+        %Config{namespace: namespace, from_file: file}
       [from: file, only: only] ->
-        %Config{namespace: namespace, schema: read_file(file, __CALLER__), only: parse_only(only, __CALLER__), from_file: file}
+        %Config{namespace: namespace, only: parse_only(only, __CALLER__), from_file: file}
       [from: file, inject: true] ->
-        %Config{namespace: namespace, schema: read_file(file, __CALLER__), only: [namespace], inject: true, from_file: file}
+        %Config{namespace: namespace,  only: [namespace], inject: true, from_file: file}
       [from: file, only: only, inject: true] ->
         types = parse_only(only, __CALLER__)
         case types do
           []       -> raise ConfigError, error: "You must specify a type using :only when combined with inject: true"
-          [_type]  -> %Config{namespace: namespace, schema: read_file(file, __CALLER__), only: types, inject: true, from_file: file}
+          [_type]  -> %Config{namespace: namespace, only: types, inject: true, from_file: file}
         end
     end
 
     config |> parse(__CALLER__) |> Builder.define(config)
-  end
-
-  # Read the file passed to :from
-  defp read_file(file, caller) do
-    {file, []} = Code.eval_quoted(file, [], caller)
-    File.read!(file)
   end
 
   # Read the type or list of types to extract from the schema
@@ -58,13 +52,11 @@ defmodule Protobuf do
 
   # Parse and fix namespaces of parsed types
   defp parse(%Config{namespace: ns, schema: schema, inject: inject, from_file: nil}, _) do
-    Parser.parse!(schema) |> namespace_types(ns, inject)
+    Parser.parse_string!(schema) |> namespace_types(ns, inject)
   end
-  defp parse(%Config{namespace: ns, schema: schema, inject: inject, from_file: file}, caller) do
-    {path, _} = Code.eval_quoted(file, [], caller)
-    path      = Path.expand(path) |> Path.dirname
-    opts      = [imports: [path]]
-    Parser.parse!(schema, opts) |> namespace_types(ns, inject)
+  defp parse(%Config{namespace: ns, inject: inject, from_file: file}, caller) do
+    {paths, import_dirs} = resolve_paths(file, caller)
+    Parser.parse_files!(paths, [imports: import_dirs]) |> namespace_types(ns, inject)
   end
 
   # Apply namespace to top-level types
@@ -107,5 +99,16 @@ defmodule Protobuf do
     |> Enum.map(fn({first, remainder}) -> String.upcase(first) <> remainder end)
     |> Enum.join(".")
     |> String.to_atom
+  end
+
+  defp resolve_paths(quoted_files, caller) do
+    paths = case Code.eval_quoted(quoted_files, [], caller) do
+      {path, _} when is_binary(path) -> [path]
+      {paths, _} when is_list(paths) -> paths
+    end
+
+    import_dirs = Enum.map(paths, &Path.dirname/1) |> Enum.uniq
+
+    {paths, import_dirs}
   end
 end
