@@ -25,6 +25,8 @@ defmodule Protobuf do
         end
       from: file ->
         %Config{namespace: namespace, from_file: file}
+      from: file, use_package_names: use_package_names ->
+        %Config{namespace: namespace, from_file: file, use_package_names: use_package_names}
       [from: file, only: only] ->
         %Config{namespace: namespace, only: parse_only(only, __CALLER__), from_file: file}
       [from: file, inject: true] ->
@@ -54,9 +56,9 @@ defmodule Protobuf do
   defp parse(%Config{namespace: ns, schema: schema, inject: inject, from_file: nil}, _) do
     Parser.parse_string!(schema) |> namespace_types(ns, inject)
   end
-  defp parse(%Config{namespace: ns, inject: inject, from_file: file}, caller) do
+  defp parse(%Config{namespace: ns, inject: inject, from_file: file, use_package_names: use_package_names}, caller) do
     {paths, import_dirs} = resolve_paths(file, caller)
-    Parser.parse_files!(paths, [imports: import_dirs]) |> namespace_types(ns, inject)
+    Parser.parse_files!(paths, [imports: import_dirs, use_packages: use_package_names]) |> namespace_types(ns, inject)
   end
 
   # Apply namespace to top-level types
