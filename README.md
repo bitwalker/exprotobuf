@@ -17,7 +17,6 @@ ci.org/bitwalker/exprotobuf)
 
 TODO:
 
-* Support importing definitions
 * Clean up code/tests
 
 ## Getting Started
@@ -88,6 +87,24 @@ end
 
 This is equivalent to the above, if you assume that `messages.proto`
 contains the same schema as in the string of the first example.
+
+### Loading all definitions from a set of files
+
+```elixir
+defmodule Protobufs do
+  use Protobuf, from: Path.wildcard(Path.expand("../definitions/**/*.proto", __DIR__))
+end
+```
+
+```elixir
+iex> Protobufs.Msg.new(v: :V1)
+%Protobufs.Msg{v: :V1}
+iex> %Protobufs.OtherMessage{middle_name: "Danger"}
+%Protobufs.OtherMessage{middle_name: "Danger"}
+```
+
+This will load all the various definitions in your `.proto` files and
+allow them to share definitions like enums or messages between them.
 
 ### Inject a definition into an existing module
 
