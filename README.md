@@ -19,6 +19,11 @@ TODO:
 
 * Clean up code/tests
 
+## Breaking Changes
+
+The 1.0 release removed the feature of handling `import "...";` statements.
+Please see [the imports upgrade guide](imports_upgrade_guide.md) for details if you were using this feature.
+
 ## Getting Started
 
 Add exprotobuf as a dependency to your project:
