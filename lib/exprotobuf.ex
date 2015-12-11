@@ -91,8 +91,8 @@ defmodule Protobuf do
   defp namespace_fields(%Field{} = field, _ns) do
     field
   end
-  defp namespace_fields(%OneOfField{} = field, _ns) do
-    field |> Map.put(:fields, Enum.map(field.fields, &namespace_fields(&1, _ns)))
+  defp namespace_fields(%OneOfField{} = field, ns) do
+    field |> Map.put(:fields, Enum.map(field.fields, &namespace_fields(&1, ns)))
   end
 
   # Normalizes module names by ensuring they are cased correctly

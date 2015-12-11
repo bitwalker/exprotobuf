@@ -17,10 +17,10 @@ defmodule Protobuf.Utils do
   defp record_name(Field), do: :field
   defp record_name(type), do: type
 
-  defp value_transform(OneOfField = module, value) when is_list(value) do
+  defp value_transform(OneOfField, value) when is_list(value) do
     Enum.map(value, &convert_to_record(&1, Field))
   end
-  defp value_transform(module, value), do: value
+  defp value_transform(_module, value), do: value
 
 
   def convert_from_record(rec, module) do
