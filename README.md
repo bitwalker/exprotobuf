@@ -17,8 +17,12 @@ ci.org/bitwalker/exprotobuf)
 
 TODO:
 
-* Support importing definitions
 * Clean up code/tests
+
+## Breaking Changes
+
+The 1.0 release removed the feature of handling `import "...";` statements.
+Please see [the imports upgrade guide](imports_upgrade_guide.md) for details if you were using this feature.
 
 ## Getting Started
 
@@ -88,6 +92,76 @@ end
 
 This is equivalent to the above, if you assume that `messages.proto`
 contains the same schema as in the string of the first example.
+
+### Loading all definitions from a set of files
+
+```elixir
+defmodule Protobufs do
+  use Protobuf, from: Path.wildcard(Path.expand("../definitions/**/*.proto", __DIR__))
+end
+```
+
+```elixir
+iex> Protobufs.Msg.new(v: :V1)
+%Protobufs.Msg{v: :V1}
+iex> %Protobufs.OtherMessage{middle_name: "Danger"}
+%Protobufs.OtherMessage{middle_name: "Danger"}
+```
+
+This will load all the various definitions in your `.proto` files and
+allow them to share definitions like enums or messages between them.
+
+### Customizing Generated Module Names
+
+In some cases your library of protobuf definitions might already contain some
+namespaces that you would like to keep.
+In this case you will probably want to pass the `use_package_names: true` option.
+Let's say you had a file called `protobufs/example.proto` that contained:
+
+```protobuf
+package world;
+message Example {
+  enum Continent {
+    ANTARCTICA = 0;
+    EUROPE = 1;
+  }
+
+  optional Continent continent = 1;
+  optional uint32 id = 2;
+}
+```
+
+You could load that file (and everything else in the protobufs directory) by doing:
+
+```elixir
+defmodule Definitions do
+  use Protobuf, from: Path.wildcard("protobufs/*.proto"), use_package_names: true
+end
+```
+
+```elixir
+iex> Definitions.World.Example.new(continent: :EUROPE)
+%Definitions.World.Example{continent: :EUROPE}
+```
+
+You might also want to define all of these modules in the top-level namespace. You
+can do this by passing an explicit `namespace: :"Elixir"` option.
+
+```elixir
+defmodule Definitions do
+  use Protobuf, from: Path.wildcard("protobufs/*.proto"),
+                use_package_names: true,
+                namespace: :"Elixir"
+end
+```
+
+```elixir
+iex> World.Example.new(continent: :EUROPE)
+%World.Example{continent: :EUROPE}
+```
+
+Now you can use just the package names and message names that your team is already
+familiar with.
 
 ### Inject a definition into an existing module
 
