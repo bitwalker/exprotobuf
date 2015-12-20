@@ -1,0 +1,29 @@
+
+enum SGVariantType { VT_STRING = 0; VT_MAP = 1;  }
+
+message SGVariant {
+	required SGVariantType type = 1;
+	oneof value_oneof {
+		string stringValue = 2;
+		SGVariantMap mapValue = 9;
+	}
+}
+
+message SGVariantPair {
+	required string key = 1;
+	required SGVariant value = 2;
+}
+
+message SGVariantMap {
+	repeated SGVariantPair entrySet = 1;
+}
+
+message SGPacket {
+	message SGHeader {
+		required string version = 1;
+		optional SGVariantMap options = 4;
+	}
+
+	required SGHeader header = 1;
+	
+}
