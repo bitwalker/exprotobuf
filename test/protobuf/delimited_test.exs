@@ -44,5 +44,13 @@ defmodule Extprotobuf.Delimited.Test do
     assert users == Enum.map(1..3, fn(_)-> %Wrapper.User{name: "Mujju", id: 1} end)
   end
 
+  test "decode_delimited works" do
+    assert Wrapper.User.decode_delimited(@encoded_out) == [%Wrapper.User{name: "Mujju", id: 1}]
+  end
+
+  test "encode_delimited works" do
+    assert Wrapper.User.encode_delimited([%Wrapper.User{name: "Mujju", id: 1}]) ==  @encoded_out
+  end
+
 end
 

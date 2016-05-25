@@ -5,6 +5,7 @@ defmodule Protobuf.DefineMessage do
   alias Protobuf.Encoder
   alias Protobuf.Field
   alias Protobuf.OneOfField
+  alias Protobuf.Delimited
 
   def def_message(name, fields, inject: inject) when is_list(fields) do
     struct_fields = record_fields(fields)
@@ -81,6 +82,8 @@ defmodule Protobuf.DefineMessage do
     quote do
       def decode(data),         do: Decoder.decode(data, __MODULE__)
       def encode(%{} = record), do: Encoder.encode(record, defs)
+      def decode_delimited(bytes),    do: Delimited.decode(bytes, __MODULE__)
+      def encode_delimited(messages), do: Delimited.encode(messages)
     end
   end
 
