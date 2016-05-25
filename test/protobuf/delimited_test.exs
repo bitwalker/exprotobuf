@@ -35,18 +35,13 @@ defmodule Extprotobuf.Delimited.Test do
   end
 
   test "decode creates a valid struct for 1 message" do
-    assert Protobuf.Delimited.decode(@encoded_out, Wrapper.User) == [%Wrapper.User{name: "Mujju", id: 1} | nil ]
+    assert Protobuf.Delimited.decode(@encoded_out, Wrapper.User) == [%Wrapper.User{name: "Mujju", id: 1}]
   end
 
   test "decode creates a valid struct for 3 message" do
     users = Protobuf.Delimited.decode(@encoded_out_multiple, Wrapper.User)
-    [h|rest] = users
-    assert h == %Wrapper.User{name: "Mujju", id: 1}
-    [h|rest] = rest
-    assert h == %Wrapper.User{name: "Mujju", id: 1}
-    [h|rest] = rest
-    assert h == %Wrapper.User{name: "Mujju", id: 1}
-    assert rest == nil
+
+    assert users == Enum.map(1..3, fn(_)-> %Wrapper.User{name: "Mujju", id: 1} end)
   end
 
 end

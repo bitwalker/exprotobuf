@@ -12,13 +12,17 @@ defmodule Protobuf.Delimited do
 
   # the input bytes are laid out as:
   # << 4-bytes-of-byte-size, message, 4-bytes-of-byte-size, message,.... >>
-  def decode(<< number_of_bytes ::  size(32) >> <> << message_bytes :: bytes-size(number_of_bytes), rest :: binary >>, module) do
-    decoded_message = apply(module, :decode, [message_bytes])
-    [ decoded_message | decode(rest, module) ]
+  def decode(bytes, module) do
+    do_decode(bytes, module, [])
   end
 
-  def decode(<<>>, module) do
-    nil
+  defp do_decode(<< number_of_bytes ::  size(32) >> <> << message_bytes :: bytes-size(number_of_bytes), rest :: binary >>, module, acc) do
+    decoded_message = apply(module, :decode, [message_bytes])
+    do_decode(rest, module, [decoded_message | acc])
+  end
+
+  defp do_decode(<<>>, module, acc) do
+    acc |> Enum.reverse
   end
 
   # private stuff
