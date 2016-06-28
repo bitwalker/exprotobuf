@@ -19,11 +19,11 @@ defmodule Protobuf.Map.Test do
 
   test "can decode map" do
     entity = @binary |> Msgs.Entity.decode
-    assert entity = %Msgs.Entity{
+    assert %Msgs.Entity{
       properties: [
         {"name", %Msgs.Value{value: "elixir"}}
       ]
-    }
+    } = entity
   end
 end
 
