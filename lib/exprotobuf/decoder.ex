@@ -69,7 +69,12 @@ defmodule Protobuf.Decoder do
     end
   end
 
-  defp convert_value(:string, value),   do: :unicode.characters_to_binary(value)
-  defp convert_value({:msg, _}, value), do: value |> Utils.convert_from_record(elem(value, 0)) |> convert_fields
-  defp convert_value(_, value),         do: value
+  defp convert_value(:string, value),
+    do: :unicode.characters_to_binary(value)
+  defp convert_value({:msg, _}, value),
+    do: value |> Utils.convert_from_record(elem(value, 0)) |> convert_fields
+  defp convert_value({:map, key_type, value_type}, {key, value}),
+    do: {convert_value(key_type, key), convert_value(value_type, value)}
+  defp convert_value(_, value),
+    do: value
 end

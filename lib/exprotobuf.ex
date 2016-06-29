@@ -85,6 +85,9 @@ defmodule Protobuf do
       _          -> field |> Utils.convert_from_record(Field) |> namespace_fields(ns)
     end
   end
+  defp namespace_fields(%Field{type: {:map, key_type, value_type}} = field, ns) do
+    %{field | :type => {:map, key_type |> namespace_map_type(ns), value_type |> namespace_map_type(ns)}}
+  end
   defp namespace_fields(%Field{type: {type, name}} = field, ns) do
     %{field | :type => {type, :"#{ns}.#{name |> normalize_name}"}}
   end
@@ -93,6 +96,13 @@ defmodule Protobuf do
   end
   defp namespace_fields(%OneOfField{} = field, ns) do
     field |> Map.put(:fields, Enum.map(field.fields, &namespace_fields(&1, ns)))
+  end
+
+  defp namespace_map_type({:msg, name}, ns) do
+    {:msg, :"#{ns}.#{name |> normalize_name}"}
+  end
+  defp namespace_map_type(type, _ns) do
+    type
   end
 
   # Normalizes module names by ensuring they are cased correctly

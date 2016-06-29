@@ -1,0 +1,7 @@
+message Value {
+  required string value = 1;
+}
+
+message Entity {
+  map<string, Value> properties = 1;
+}
