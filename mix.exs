@@ -3,7 +3,7 @@ defmodule Protobuf.Mixfile do
 
   def project do
     [app: :exprotobuf,
-     version: "1.0.0",
+     version: "1.0.1",
      elixir: "~> 1.0",
      description: description,
      package: package,
@@ -30,7 +30,6 @@ defmodule Protobuf.Mixfile do
 
   defp deps do
     [{:gpb, "~> 3.21.3"},
-     {:earmark, "~> 0.1", only: :dev},
-     {:ex_doc, "~> 0.9", only: :dev}]
+     {:ex_doc, "~> 0.13", only: :dev}]
   end
 end
