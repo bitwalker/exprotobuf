@@ -4,8 +4,8 @@ defmodule Extprotobuf.Delimited.Test do
   defmodule Wrapper do
     use Protobuf, """
     message User {
-    required string name = 1;
-    optional int32 id = 2;
+      required string name = 1;
+      optional int32 id = 2;
     }
     """
   end
@@ -18,7 +18,7 @@ defmodule Extprotobuf.Delimited.Test do
     encoded_bytes = Protobuf.Delimited.encode([user])
 
     encoded_user = Wrapper.User.encode(user)
-    size = << byte_size(encoded_user) :: size(32) >>
+    size = <<byte_size(encoded_user)::size(32)>>
 
     assert encoded_bytes == size <> encoded_user
     assert encoded_bytes == @encoded_out
@@ -29,7 +29,7 @@ defmodule Extprotobuf.Delimited.Test do
     encoded_bytes = Protobuf.Delimited.encode([user, user, user])
 
     encoded_user = Wrapper.User.encode(user)
-    size = << byte_size(encoded_user) :: size(32) >>
+    size = <<byte_size(encoded_user)::size(32)>>
 
     assert encoded_bytes == String.duplicate(size <> encoded_user, 3)
   end
@@ -51,6 +51,4 @@ defmodule Extprotobuf.Delimited.Test do
   test "encode_delimited works" do
     assert Wrapper.User.encode_delimited([%Wrapper.User{name: "Mujju", id: 1}]) ==  @encoded_out
   end
-
 end
-
