@@ -24,21 +24,24 @@ defmodule Protobuf do
         end
       _ ->
         namespace = Dict.get(opts, :namespace, __CALLER__.module)
+        doc = Dict.get(opts, :doc, nil)
+        opts = Dict.delete(opts, :doc)
         opts = Dict.delete(opts, :namespace)
+
         case opts do
           from: file ->
-            %Config{namespace: namespace, from_file: file}
+            %Config{namespace: namespace, from_file: file, doc: doc}
           from: file, use_package_names: use_package_names ->
-            %Config{namespace: namespace, from_file: file, use_package_names: use_package_names}
+            %Config{namespace: namespace, from_file: file, use_package_names: use_package_names, doc: doc}
           [from: file, only: only] ->
-            %Config{namespace: namespace, only: parse_only(only, __CALLER__), from_file: file}
+            %Config{namespace: namespace, only: parse_only(only, __CALLER__), from_file: file, doc: doc}
           [from: file, inject: true] ->
-            %Config{namespace: namespace,  only: [namespace], inject: true, from_file: file}
+            %Config{namespace: namespace,  only: [namespace], inject: true, from_file: file, doc: doc}
           [from: file, only: only, inject: true] ->
             types = parse_only(only, __CALLER__)
             case types do
               []       -> raise ConfigError, error: "You must specify a type using :only when combined with inject: true"
-              [_type]  -> %Config{namespace: namespace, only: types, inject: true, from_file: file}
+              [_type]  -> %Config{namespace: namespace, only: types, inject: true, from_file: file, doc: doc}
             end
         end
     end

@@ -50,6 +50,7 @@ defmodule Protobuf.Builder do
   def generate(msgs, config) do
     only   = Keyword.get(config, :only, [])
     inject = Keyword.get(config, :inject, false)
+    doc    = Keyword.get(config, :doc, true)
     ns     = Keyword.get(config, :namespace)
 
     quotes = for {{item_type, item_name}, fields} <- msgs, item_type in [:msg, :enum], into: [] do
@@ -57,17 +58,17 @@ defmodule Protobuf.Builder do
         is_child? = Enum.any?(only, fn o -> o != item_name and is_child_type?(item_name, o) end)
         if item_name in only or is_child? do
           case item_type do
-            :msg when is_child?  -> def_message(item_name |> fix_ns(ns), fields, inject: false)
-            :msg                 -> def_message(ns, fields, inject: inject)
-            :enum when is_child? -> def_enum(item_name |> fix_ns(ns), fields, inject: false)
-            :enum                -> def_enum(ns, fields, inject: inject)
+            :msg when is_child?  -> def_message(item_name |> fix_ns(ns), fields, inject: false, doc: doc)
+            :msg                 -> def_message(ns, fields, inject: inject, doc: doc)
+            :enum when is_child? -> def_enum(item_name |> fix_ns(ns), fields, inject: false, doc: doc)
+            :enum                -> def_enum(ns, fields, inject: inject, doc: doc)
             _     -> []
           end
         end
       else
         case item_type do
-          :msg  -> def_message(item_name, fields, inject: false)
-          :enum -> def_enum(item_name, fields, inject: false)
+          :msg  -> def_message(item_name, fields, inject: false, doc: doc)
+          :enum -> def_enum(item_name, fields, inject: false, doc: doc)
           _     -> []
         end
       end
