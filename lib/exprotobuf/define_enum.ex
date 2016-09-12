@@ -5,7 +5,7 @@ defmodule Protobuf.DefineEnum do
   Defines a new module which contains two functions, atom(value) and value(atom), for
   getting either the name or value of an enumeration value.
   """
-  def def_enum(name, values, inject: inject) do
+  def def_enum(name, values, [inject: inject, doc: doc]) do
     enum_atoms = Enum.map values, fn {a, _} -> a end
     enum_values = Enum.map values, fn {_, v} -> v end
     contents = for {atom, value} <- values do
@@ -25,6 +25,7 @@ defmodule Protobuf.DefineEnum do
     else
       quote do
         defmodule unquote(name) do
+          unquote(Protobuf.Config.doc_quote(doc))
           unquote(contents)
           def value(_), do: nil
           def atom(_), do: nil
@@ -32,4 +33,5 @@ defmodule Protobuf.DefineEnum do
       end
     end
   end
+
 end
