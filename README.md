@@ -36,6 +36,14 @@ end
 
 Then run `mix deps.get` to fetch.
 
+Add exprotobuf to applications list:
+
+```elixir
+def application do
+  [applications: [:exprotobuf]]
+end
+```
+
 ## Usage
 
 Usage of exprotobuf boils down to a single `use` statement within one or
