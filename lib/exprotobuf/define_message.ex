@@ -121,6 +121,8 @@ defmodule Protobuf.DefineMessage do
       case field do
         %Field{name: name, occurrence: :repeated} ->
           {name, []}
+        %Field{name: name, opts: [default: default]} ->
+          {name, default}
         %Field{name: name} ->
           {name, nil}
         %OneOfField{name: name} ->

@@ -50,6 +50,22 @@ defmodule ProtobufTest do
     assert [] == msg.f1
   end
 
+  test "set default value if specified explicitly" do
+    defmodule DefaultValueExplicitProto do
+      use Protobuf, "message Msg { optional uint32 f1 = 1 [default = 42]; }"
+    end
+    msg = DefaultValueExplicitProto.Msg.new()
+    assert 42 == msg.f1
+  end
+
+  test "does not set default value if there is a type mismatch" do
+    assert_raise Protobuf.Parser.ParserError, fn ->
+      defmodule DefaultValueExplicitProto do
+        use Protobuf, "message Msg { optional uint32 f1 = 1 [default = -1]; }"
+      end
+    end
+  end
+
   test "define a record in subnamespace" do
     defmodule SubnamespacedRecordProto do
       use Protobuf, """
