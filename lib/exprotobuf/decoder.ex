@@ -43,13 +43,17 @@ defmodule Protobuf.Decoder do
   end
 
   defp get_default(field, module) do
-    case module.defs(:field, field).type do
-      :string ->
-        ""
-      ty ->
-        case :gpb.proto3_type_default(ty, module.defs) do
-          :undefined -> nil
-          default -> default
+    case module.defs(:field, field) do
+      %Protobuf.OneOfField{} -> nil
+      x ->
+        case x.type do
+          :string ->
+            ""
+          ty ->
+            case :gpb.proto3_type_default(ty, module.defs) do
+              :undefined -> nil
+              default -> default
+            end
         end
     end
   end
