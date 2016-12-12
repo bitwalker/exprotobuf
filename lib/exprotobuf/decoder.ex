@@ -33,14 +33,25 @@ defmodule Protobuf.Decoder do
     Enum.reduce(Map.keys(msg), msg, fn
       :__struct__, msg -> msg
       field, %{__struct__: module} = msg ->
-        default = Map.get(struct(module), field)
-        value   = Map.get(msg, field)
+        value = Map.get(msg, field)
         if value == :undefined do
-          Map.put(msg, field, default)
+          Map.put(msg, field, get_default(field, module))
         else
           convert_field(value, msg, module.defs(:field, field))
         end
     end)
+  end
+
+  defp get_default(field, module) do
+    case module.defs(:field, field).type do
+      :string ->
+        ""
+      ty ->
+        case :gpb.proto3_type_default(ty, module.defs) do
+          :undefined -> nil
+          default -> default
+        end
+    end
   end
 
   defp convert_field(value, msg, %Field{name: field, type: type, occurrence: occurrence}) do
