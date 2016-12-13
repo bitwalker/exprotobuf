@@ -2,7 +2,7 @@ defmodule Protobuf.Decoder.Test do
   use Protobuf.Case
   alias Protobuf.Decoder, as: D
 
-  test "fix :undefined values to nil value" do
+  test "fix :undefined values to default value" do
     defmodule UndefinedValuesProto do
       use Protobuf, """
         message Msg {
@@ -16,7 +16,7 @@ defmodule Protobuf.Decoder.Test do
     end
 
     module = UndefinedValuesProto.Msg
-    assert %{:__struct__ => ^module, :f1 => nil, :f2 => 150} = D.decode(<<16, 150, 1>>, UndefinedValuesProto.Msg)
+    assert %{:__struct__ => ^module, :f1 => 0, :f2 => 150} = D.decode(<<16, 150, 1>>, UndefinedValuesProto.Msg)
   end
 
   test "fix repeated values" do
@@ -56,7 +56,7 @@ defmodule Protobuf.Decoder.Test do
     bytes = <<10, 1, 97, 18, 5, 10, 3, 97, 98, 99>>
     assert %{:__struct__ => ^module, :f1 => "a", :f2 => %{:__struct__ => ^submod, :f1 => "abc"}} = D.decode(bytes, FixingStringValuesProto.Msg)
   end
-  
+
   test "enums" do
     defmodule EnumsProto do
       use Protobuf, """
