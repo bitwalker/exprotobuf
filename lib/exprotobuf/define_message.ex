@@ -37,6 +37,7 @@ defmodule Protobuf.DefineMessage do
         use_in = @use_in[unquote(name)]
 
         defmodule unquote(name) do
+          @moduledoc false
           unquote(Protobuf.Config.doc_quote(doc))
           @root root
           @record unquote(struct_fields)

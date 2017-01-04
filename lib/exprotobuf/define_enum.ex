@@ -25,6 +25,7 @@ defmodule Protobuf.DefineEnum do
     else
       quote do
         defmodule unquote(name) do
+          @moduledoc false
           unquote(Protobuf.Config.doc_quote(doc))
           unquote(contents)
           def value(_), do: nil
