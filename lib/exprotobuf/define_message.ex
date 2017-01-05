@@ -22,7 +22,7 @@ defmodule Protobuf.DefineMessage do
         unquote(encode_decode(name))
         unquote(fields_methods(fields))
         unquote(oneof_fields_methods(fields))
-        unquote(meta_information)
+        unquote(meta_information())
         unquote(constructors(name))
 
         defimpl Protobuf.Serializable do
@@ -48,7 +48,7 @@ defmodule Protobuf.DefineMessage do
           unquote(encode_decode(name))
           unquote(fields_methods(fields))
           unquote(oneof_fields_methods(fields))
-          unquote(meta_information)
+          unquote(meta_information())
 
           unquote(constructors(name))
 

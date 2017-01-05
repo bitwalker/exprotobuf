@@ -23,10 +23,10 @@ defmodule Protobuf do
           [_type]  -> %Config{namespace: __CALLER__.module, schema: schema, only: types, inject: true}
         end
       _ ->
-        namespace = Dict.get(opts, :namespace, __CALLER__.module)
-        doc = Dict.get(opts, :doc, nil)
-        opts = Dict.delete(opts, :doc)
-        opts = Dict.delete(opts, :namespace)
+        namespace = Keyword.get(opts, :namespace, __CALLER__.module)
+        doc = Keyword.get(opts, :doc, nil)
+        opts = Keyword.delete(opts, :doc)
+        opts = Keyword.delete(opts, :namespace)
 
         case opts do
           from: file ->
