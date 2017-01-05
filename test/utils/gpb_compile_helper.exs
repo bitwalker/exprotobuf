@@ -9,7 +9,7 @@ defmodule GpbCompileHelper do
   end
 
   def compile_tmp_proto(msgs, options, func) do
-    compile_tmp_proto(msgs, options, find_unused_module, func)
+    compile_tmp_proto(msgs, options, find_unused_module(), func)
   end
 
   def compile_tmp_proto(msgs, options, module, func) do

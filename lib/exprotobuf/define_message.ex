@@ -68,7 +68,7 @@ defmodule Protobuf.DefineMessage do
     quote location: :keep do
       def new(), do: struct(unquote(name))
       def new(values) when is_list(values) do
-        Enum.reduce(values, new, fn
+        Enum.reduce(values, new(), fn
           {key, value}, obj ->
             if Map.has_key?(obj, key) do
               Map.put(obj, key, value)
@@ -83,7 +83,7 @@ defmodule Protobuf.DefineMessage do
   defp encode_decode(_name) do
     quote do
       def decode(data),         do: Decoder.decode(data, __MODULE__)
-      def encode(%{} = record), do: Encoder.encode(record, defs)
+      def encode(%{} = record), do: Encoder.encode(record, defs())
       def decode_delimited(bytes),    do: Delimited.decode(bytes, __MODULE__)
       def encode_delimited(messages), do: Delimited.encode(messages)
     end
