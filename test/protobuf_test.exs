@@ -1,6 +1,27 @@
 defmodule ProtobufTest do
   use Protobuf.Case
 
+  test "can roundtrip encoding/decoding" do
+    defmodule RoundtripProto do
+      use Protobuf, """
+      message Msg1 {
+        required uint32 f1 = 1;
+      }
+
+      message Msg2 {
+        required string f1 = 1;
+      }
+      """
+    end
+    msg1 = RoundtripProto.Msg1.new(f1: 1)
+    encoded1 = RoundtripProto.Msg1.encode(msg1)
+    assert ^msg1 = RoundtripProto.Msg1.decode(encoded1)
+
+    msg2 = RoundtripProto.Msg2.new()
+    encoded2 = RoundtripProto.Msg2.encode(msg2)
+    assert ^msg2 = RoundtripProto.Msg2.decode(encoded2)
+  end
+
   test "define records in namespace" do
     defmodule NamespacedRecordsProto do
       use Protobuf, """
@@ -34,7 +55,7 @@ defmodule ProtobufTest do
     assert %{:__struct__ => ^mod, :f1 => 1} = mod.new(f1: 1)
   end
 
-  test "set default value for nil is optional" do
+  test "do not set default value for optional" do
     defmodule DefaultValueForOptionalsProto do
       use Protobuf, "message Msg { optional uint32 f1 = 1; }"
     end
@@ -42,7 +63,7 @@ defmodule ProtobufTest do
     assert nil == msg.f1
   end
 
-  test "set default value for [] is repeated" do
+  test "set default value to [] for repeated" do
     defmodule DefaultValueForListsProto do
       use Protobuf, "message Msg { repeated uint32 f1 = 1; }"
     end
@@ -60,7 +81,7 @@ defmodule ProtobufTest do
 
   test "does not set default value if there is a type mismatch" do
     assert_raise Protobuf.Parser.ParserError, fn ->
-      defmodule DefaultValueExplicitProto do
+      defmodule InvalidValueDefaultValueExplicitProto do
         use Protobuf, "message Msg { optional uint32 f1 = 1 [default = -1]; }"
       end
     end

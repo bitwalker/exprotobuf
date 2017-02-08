@@ -7,6 +7,9 @@ defmodule Protobuf.Mixfile do
      elixir: "~> 1.2",
      description: description(),
      package: package(),
+     build_embedded: Mix.env == :prod,
+     start_permanent: Mix.env == :prod,
+     consolidate_protocols: Mix.env == :prod,
      deps: deps()]
   end
 

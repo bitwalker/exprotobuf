@@ -66,16 +66,43 @@ defmodule Protobuf.DefineMessage do
 
   defp constructors(name) do
     quote location: :keep do
-      def new(), do: struct(unquote(name))
+      def new(), do: new([])
       def new(values) when is_list(values) do
-        Enum.reduce(values, new(), fn
-          {key, value}, obj ->
-            if Map.has_key?(obj, key) do
-              Map.put(obj, key, value)
-            else
-              obj
-            end
+        values = Enum.into(values, %{})
+        s = struct(unquote(name))
+        keys = Map.keys(Map.from_struct(s))
+        Enum.reduce(keys, s, fn
+          key, acc ->
+            default = get_default(key)
+            value = Map.get(values, key, default)
+            Map.put(acc, key, value)
         end)
+      end
+
+      defp get_default(field) do
+        case __MODULE__.defs(:field, field) do
+          %Protobuf.OneOfField{} -> nil
+          %Protobuf.Field{occurrence: :repeated} -> []
+          x ->
+            default = get_in(Map.from_struct(x), [:opts, :default])
+            case {x.type, x.occurrence} do
+              {:string, _} when not is_nil(default) ->
+                default
+              {:string, :optional} ->
+                nil
+              {:string, _} ->
+                ""
+              {ty, _} when not is_nil(default) ->
+                default
+              {_ty, :optional} ->
+                nil
+              {ty, _} ->
+                case :gpb.proto3_type_default(ty, __MODULE__.defs) do
+                  :undefined -> nil
+                  default -> default
+                end
+            end
+        end
       end
     end
   end
