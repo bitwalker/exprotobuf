@@ -32,7 +32,7 @@ defmodule Protobuf.Mixfile do
   end
 
   defp deps do
-    [{:gpb, "~> 3.24"},
+    [{:gpb, "~> 3.26.7"},
      {:ex_doc, "~> 0.13", only: :dev}]
   end
 end
