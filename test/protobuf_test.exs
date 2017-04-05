@@ -22,6 +22,56 @@ defmodule ProtobufTest do
     assert ^msg2 = RoundtripProto.Msg2.decode(encoded2)
   end
 
+  test "can encode when protocol is extended with new optional field" do
+    defmodule BasicProto do
+      use Protobuf, """
+      message Msg {
+        required uint32 f1 = 1;
+      }
+      """
+    end
+    old = BasicProto.Msg.new(f1: 1)
+
+    defmodule BasicProto do
+      use Protobuf, """
+      message Msg {
+        required uint32 f1 = 1;
+        optional uint32 f2 = 2;
+      }
+      """
+    end
+    encoded = BasicProto.Msg.encode(old)
+    decoded = BasicProto.Msg.decode(encoded)
+
+    assert 1 = decoded.f1
+    assert 0 = decoded.f2
+  end
+
+  test "can decode when protocol is extended with new optional field" do
+    defmodule BasicProto do
+      use Protobuf, """
+      message Msg {
+        required uint32 f1 = 1;
+      }
+      """
+    end
+    old = BasicProto.Msg.new(f1: 1)
+    encoded = BasicProto.Msg.encode(old)
+
+    defmodule BasicProto do
+      use Protobuf, """
+      message Msg {
+        required uint32 f1 = 1;
+        optional uint32 f2 = 2;
+      }
+      """
+    end
+    decoded = BasicProto.Msg.decode(encoded)
+
+    assert 1 = decoded.f1
+    assert 0 = decoded.f2
+  end
+
   test "define records in namespace" do
     defmodule NamespacedRecordsProto do
       use Protobuf, """
