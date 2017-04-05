@@ -19,6 +19,7 @@ defmodule Protobuf.Utils do
   defp record_name(type) when is_atom(type), do: to_module_atom(type)
   defp record_name(type), do: type
 
+  defp value_transform(_module, nil), do: :undefined
   defp value_transform(OneOfField, value) when is_list(value) do
     Enum.map(value, &convert_to_record(&1, Field))
   end
