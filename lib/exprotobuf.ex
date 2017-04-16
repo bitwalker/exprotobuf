@@ -7,6 +7,8 @@ defmodule Protobuf do
   alias Protobuf.OneOfField
   alias Protobuf.Utils
 
+  # import IEx
+
   defmacro __using__(opts) do
     config = case opts do
       << schema :: binary >> ->
@@ -44,6 +46,13 @@ defmodule Protobuf do
               [_type]  -> %Config{namespace: namespace, only: types, inject: true, from_file: file, doc: doc}
             end
         end
+    end
+
+    path = Path.expand(opts[:from])
+    if File.exists?(path) do
+      # IEx.pry
+      :gpb_compile.file('user.proto', [{:i, '/app/lib'}, :mapfields_as_maps])
+      :compile.file('/app/user.erl', [{:i, '_build/dev/lib/gpb/include'}])
     end
 
     config |> parse(__CALLER__) |> Builder.define(config)

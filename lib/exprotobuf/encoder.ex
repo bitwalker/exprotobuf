@@ -3,25 +3,14 @@ defmodule Protobuf.Encoder do
   alias Protobuf.Field
   alias Protobuf.OneOfField
 
-  def encode(%{} = msg, defs) do
-    fixed_defs = for {{type, mod}, fields} <- defs, into: [] do
-      case type do
-        :msg  -> {{:msg, mod}, Enum.map(fields, fn field ->
-          case field do
-            %OneOfField{} -> field |> Utils.convert_to_record(OneOfField)
-            %Field{} -> field |> Utils.convert_to_record(Field)
-          end
-        end)}
-        :enum -> {{:enum, mod}, fields}
-        :extensions -> {{:extensions, mod}, fields}
-        :service -> {{:service, mod}, fields}
-      end
-    end
+  # import IEx
 
-    msg
-    |> fix_undefined
-    |> Utils.convert_to_record(msg.__struct__)
-    |> :gpb.encode_msg(fixed_defs)
+  def encode(%{} = msg, module) do
+    # fixed_msg = msg |> fix_undefined |> Utils.convert_to_record(msg.__struct__)
+    erl_module = :user
+    fixed_msg = msg |> Utils.convert_to_record(msg.__struct__) |> erl_module.encode_msg
+    #|> :gpb.encode_msg(fixed_defs)
+    # IEx.pry
   end
 
   defp fix_undefined(%{} = msg) do

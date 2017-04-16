@@ -4,25 +4,14 @@ defmodule Protobuf.Decoder do
   alias Protobuf.OneOfField
   alias Protobuf.Utils
 
+  # import IEx
+
   # Decode with record/module
   def decode(bytes, module) do
-    defs = for {{type, mod}, fields} <- module.defs, into: [] do
-      case type do
-        :msg ->
-          {{:msg, mod}, Enum.map(fields, fn field ->
-            case field do
-              %Field{}      -> Utils.convert_to_record(field, Field)
-              %OneOfField{} -> Utils.convert_to_record(field, OneOfField)
-            end
-          end)}
-        :enum       -> {{:enum, mod}, fields}
-        :extensions -> {{:extensions, mod}, fields}
-        :service -> {{:service, mod}, fields}
-      end
-    end
-    :gpb.decode_msg(bytes, module, defs)
+    erl_module = :user
+    erl_module.decode_msg(bytes, :User)
     |> Utils.convert_from_record(module)
-    |> convert_fields
+    # |> convert_fields
   end
 
   def varint(bytes) do

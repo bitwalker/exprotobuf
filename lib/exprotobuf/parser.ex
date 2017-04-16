@@ -4,12 +4,15 @@ defmodule Protobuf.Parser do
     defexception [:message]
   end
 
+  # import IEx
+
   def parse_files!(files, options \\ []) do
-    Enum.reduce(files, [], fn(path, defs) ->
+    result = Enum.reduce(files, [], fn(path, defs) ->
       schema = File.read!(path)
       new_defs = parse!(schema, options)
       defs ++ new_defs
     end) |> finalize!(options)
+    # IEx.pry
   end
 
   def parse_string!(string, options \\ []) do

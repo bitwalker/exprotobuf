@@ -15,6 +15,7 @@ defmodule Protobuf.Utils do
 
   defp record_name(OneOfField), do: :gpb_oneof
   defp record_name(Field), do: :field
+  defp record_name(type) when is_atom(type), do: :User
   defp record_name(type), do: type
 
   defp value_transform(OneOfField, value) when is_list(value) do
