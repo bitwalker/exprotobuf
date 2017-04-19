@@ -71,17 +71,20 @@ defmodule Protobuf do
   # Apply namespace to top-level types
   defp namespace_types(parsed, ns, inject) do
     for {{type, name}, fields} <- parsed do
+      parsed_type = if :gpb.is_msg_proto3(name, parsed), do: :proto3_msg, else: type
+
       if inject do
-        {{type, :"#{name |> normalize_name}"}, namespace_fields(type, fields, ns)}
+        {{parsed_type, :"#{name |> normalize_name}"}, namespace_fields(type, fields, ns)}
       else
-        {{type, :"#{ns}.#{name |> normalize_name}"}, namespace_fields(type, fields, ns)}
+        {{parsed_type, :"#{ns}.#{name |> normalize_name}"}, namespace_fields(type, fields, ns)}
       end
     end
   end
 
   # Apply namespace to nested types
-  defp namespace_fields(:msg, fields, ns), do: Enum.map(fields, &namespace_fields(&1, ns))
-  defp namespace_fields(_, fields, _),     do: fields
+  defp namespace_fields(:msg, fields, ns),        do: Enum.map(fields, &namespace_fields(&1, ns))
+  defp namespace_fields(:proto3_msg, fields, ns), do: Enum.map(fields, &namespace_fields(&1, ns))
+  defp namespace_fields(_, fields, _),            do: fields
   defp namespace_fields(field, ns) when not is_map(field) do
     case elem(field, 0) do
       :gpb_oneof -> field |> Utils.convert_from_record(OneOfField) |> namespace_fields(ns)

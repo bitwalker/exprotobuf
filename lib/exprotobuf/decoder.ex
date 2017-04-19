@@ -35,14 +35,17 @@ defmodule Protobuf.Decoder do
       field, %{__struct__: module} = msg ->
         value = Map.get(msg, field)
         if value == :undefined do
-          Map.put(msg, field, get_default(field, module))
+          Map.put(msg, field, get_default(module.syntax(), field, module))
         else
           convert_field(value, msg, module.defs(:field, field))
         end
     end)
   end
 
-  defp get_default(field, module) do
+  defp get_default(:proto2, field, module) do
+    Map.get(struct(module), field)
+  end
+  defp get_default(:proto3, field, module) do
     case module.defs(:field, field) do
       %Protobuf.OneOfField{} -> nil
       x ->
