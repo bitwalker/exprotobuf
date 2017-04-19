@@ -54,34 +54,42 @@ defmodule Protobuf.Builder do
     ns         = Keyword.get(config, :namespace)
     erl_module = Keyword.get(config, :erl_module)
 
-    quotes = for {{item_type, item_name}, fields} <- msgs, item_type in [:msg, :enum], into: [] do
+    quotes = for {{item_type, item_name}, fields} <- msgs, item_type in [:msg, :proto3_msg, :enum], into: [] do
       if only != [] do
         is_child? = Enum.any?(only, fn o -> o != item_name and is_child_type?(item_name, o) end)
         if item_name in only or is_child? do
           case item_type do
-            :msg when is_child?  -> def_message(item_name |> fix_ns(ns), fields, inject: false, doc: doc, erl_module: erl_module)
-            :msg                 -> def_message(ns, fields, inject: inject, doc: doc, erl_module: erl_module)
-            :enum when is_child? -> def_enum(item_name |> fix_ns(ns), fields, inject: false, doc: doc)
-            :enum                -> def_enum(ns, fields, inject: inject, doc: doc)
-            _     -> []
+            :msg when is_child?        -> def_message(item_name |> fix_ns(ns), fields, inject: false, doc: doc, erl_module: erl_module, syntax: :proto2)
+            :msg                       -> def_message(ns, fields, inject: inject, doc: doc, erl_module: erl_module, syntax: :proto2)
+            :proto3_msg when is_child? -> def_message(item_name |> fix_ns(ns), fields, inject: false, doc: doc, erl_module: erl_module, syntax: :proto3)
+            :proto3_msg                -> def_message(ns, fields, inject: inject, doc: doc, erl_module: erl_module, syntax: :proto3)
+            :enum when is_child?       -> def_enum(item_name |> fix_ns(ns), fields, inject: false, doc: doc)
+            :enum                      -> def_enum(ns, fields, inject: inject, doc: doc)
+            _                          -> []
           end
         end
       else
         case item_type do
-          :msg  -> def_message(item_name, fields, inject: false, doc: doc, erl_module: erl_module)
-          :enum -> def_enum(item_name, fields, inject: false, doc: doc)
-          _     -> []
+          :msg        -> def_message(item_name, fields, inject: false, doc: doc, erl_module: erl_module, syntax: :proto2)
+          :proto3_msg -> def_message(item_name, fields, inject: false, doc: doc, erl_module: erl_module, syntax: :proto3)
+          :enum       -> def_enum(item_name, fields, inject: false, doc: doc)
+          _           -> []
         end
       end
     end
 
+    unified_msgs = msgs |> Enum.map(&unify_msg_types/1)
+
     # Global defs helper
     quotes ++ [quote do
       def defs do
-        unquote(Macro.escape(msgs, unquote: true))
+        unquote(Macro.escape(unified_msgs, unquote: true))
       end
     end]
   end
+
+  defp unify_msg_types({{:proto3_msg, name}, fields}), do: {{:msg, name}, fields}
+  defp unify_msg_types(other),                         do: other
 
   defp is_child_type?(child, type) do
     [parent|_] = child |> Atom.to_string |> String.split(".", parts: :infinity)

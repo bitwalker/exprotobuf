@@ -7,7 +7,7 @@ defmodule Protobuf.DefineMessage do
   alias Protobuf.OneOfField
   alias Protobuf.Delimited
 
-  def def_message(name, fields, [inject: inject, doc: doc, erl_module: erl_module]) when is_list(fields) do
+  def def_message(name, fields, [inject: inject, doc: doc, erl_module: erl_module, syntax: syntax]) when is_list(fields) do
     struct_fields = record_fields(fields)
 
     # Inject everything in 'using' module
@@ -19,6 +19,8 @@ defmodule Protobuf.DefineMessage do
         fields = unquote(struct_fields)
 
         def record, do: @record
+        def erl_module, do: unquote(erl_module)
+        def syntax, do: unquote(syntax)
 
         unquote(encode_decode(name))
         unquote(fields_methods(fields))
@@ -46,7 +48,8 @@ defmodule Protobuf.DefineMessage do
           defstruct @record
 
           def record, do: @record
-          def erl_module, do: @erl_module
+          def erl_module, do: unquote(erl_module)
+          def syntax, do: unquote(syntax)
 
           unquote(encode_decode(name))
           unquote(fields_methods(fields))
@@ -88,18 +91,19 @@ defmodule Protobuf.DefineMessage do
           %Protobuf.Field{occurrence: :repeated} -> []
           x ->
             default = get_in(Map.from_struct(x), [:opts, :default])
-            case {x.type, x.occurrence} do
-              {:string, _} when not is_nil(default) ->
+            syntax = __MODULE__.syntax()
+            case {x.type, syntax} do
+              {:string, :proto2} when not is_nil(default) ->
                 default
-              {:string, :optional} ->
+              {:string, :proto2} ->
                 nil
-              {:string, _} ->
+              {:string, :proto3} ->
                 ""
-              {ty, _} when not is_nil(default) ->
+              {ty, :proto2} when not is_nil(default) ->
                 default
-              {_ty, :optional} ->
+              {_ty, :proto2} ->
                 nil
-              {ty, _} ->
+              {ty, :proto3} ->
                 case :gpb.proto3_type_default(ty, __MODULE__.defs) do
                   :undefined -> nil
                   default -> default
