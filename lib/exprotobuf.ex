@@ -7,6 +7,8 @@ defmodule Protobuf do
   alias Protobuf.OneOfField
   alias Protobuf.Utils
 
+  @record_path ~w(priv gpb_records)
+
   # import IEx
 
   defmacro __using__(opts) do
@@ -50,9 +52,10 @@ defmodule Protobuf do
 
     path = Path.expand(opts[:from])
     if File.exists?(path) do
-      # IEx.pry
-      :gpb_compile.file('user.proto', [{:i, '/app/lib'}, :mapfields_as_maps])
-      :compile.file('/app/user.erl', [{:i, '_build/dev/lib/gpb/include'}])
+      full_record_path = Path.expand(Path.join(@record_path), File.cwd!)
+      File.mkdir_p(full_record_path)
+      :gpb_compile.file('user.proto', [{:i, '/app/lib'}, {:o, String.to_char_list(full_record_path)}, :mapfields_as_maps])
+      :compile.file('/app/priv/gpb_records/user.erl', [{:i, '_build/dev/lib/gpb/include'}, {:outdir, '_build/dev/lib/exprotobuf_demo/ebin'}])
     end
 
     config |> parse(__CALLER__) |> Builder.define(config)
