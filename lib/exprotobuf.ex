@@ -7,8 +7,6 @@ defmodule Protobuf do
   alias Protobuf.OneOfField
   alias Protobuf.Utils
 
-  @record_path ~w(priv gpb_records)
-
   # import IEx
 
   defmacro __using__(opts) do
@@ -50,16 +48,57 @@ defmodule Protobuf do
         end
     end
 
-    path = Path.expand(opts[:from])
-    if File.exists?(path) do
-      full_record_path = Path.expand(Path.join(@record_path), File.cwd!)
-      File.mkdir_p(full_record_path)
-      :gpb_compile.file('user.proto', [{:i, '/app/lib'}, {:o, String.to_char_list(full_record_path)}, :mapfields_as_maps])
-      :compile.file('/app/priv/gpb_records/user.erl', [{:i, '_build/dev/lib/gpb/include'}, {:outdir, '_build/dev/lib/exprotobuf_demo/ebin'}])
-    end
+    proto_compile(opts[:from])
+    # from = Path.expand(opts[:from])
+    # if File.exists?(from) do
+    #   pattern = ~r/(.+\/)(\w+.proto)/i
+    #   [_, path, file_name] = Regex.run(pattern, from)
+    #    record_path = ~w(priv gpb_records)
+    #   full_record_path = Path.expand(Path.join(record_path), File.cwd!)
+    #   File.mkdir_p(full_record_path)
+    #   :gpb_compile.file(String.to_char_list(file_name), [{:i, String.to_char_list(path)}, {:o, String.to_char_list(full_record_path)}, :mapfields_as_maps])
+    #   app_name = Mix.Project.get.project[:app] |> Atom.to_string
+    #   :compile.file(String.to_char_list(Path.join(full_record_path, "user.erl")), [{:i, '_build/dev/lib/gpb/include'}, {:outdir, String.to_char_list("_build/dev/lib/#{app_name}/ebin")}])
+    # end
 
     config |> parse(__CALLER__) |> Builder.define(config)
   end
+
+  def proto_compile(path) when is_binary(path) do
+    with {:ok, paths} <- extract_paths(path),
+         true         <- File.exists?(paths["fullpath"]) do
+      proto_compile(paths)
+    else
+      :error -> {:error, "Something went wrong!"}
+    end
+  end
+
+  def proto_compile(paths) when is_map(paths) do
+    record_path = ~w(priv gpb_records)
+    |> Path.join
+    |> Path.expand(File.cwd!)
+    |> String.to_char_list
+
+    case File.mkdir_p(record_path) do
+      :ok -> :gpb_compile.file(
+                paths["file_name"],
+                [{:i, paths["path"]},
+                {:o, record_path}, :mapfields_as_maps])
+      _   -> :error
+    end
+  end
+
+  # def compile(:bytecode, paths) do
+  # end
+
+  def extract_paths(path) when byte_size(path) > 0 do
+    paths = ~r/(?<fullpath>(?<path>.+\/)(?<file_name>\w+.proto))/i
+    |> Regex.named_captures(Path.expand(path))
+    |> Enum.reduce(%{}, fn({k, v}, acc) -> Map.merge(acc, %{k => String.to_char_list(v) }) end)
+    {:ok, paths}
+  end
+
+  def extract_paths(_path), do: {:error, "The proto file path must be passed via :from option key" }
 
   # Read the type or list of types to extract from the schema
   defp parse_only(only, caller) do
