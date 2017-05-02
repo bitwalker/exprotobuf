@@ -4,8 +4,7 @@ exprotobuf works by building module/struct definitions from a [Google Protocol B
 schema. This allows you to work with protocol buffers natively in Elixir, with easy decoding/encoding for transport across the
 wire.
 
-[![Build Status](https://travis-ci.org/bitwalker/exprotobuf.svg?branch=master)](https://travis-
-ci.org/bitwalker/exprotobuf)
+[![Build Status](https://travis-ci.org/bitwalker/exprotobuf.svg?branch=master)](https://travis-ci.org/bitwalker/exprotobuf)
 [![Hex.pm Version](http://img.shields.io/hexpm/v/exprotobuf.svg?style=flat)](https://hex.pm/packages/exprotobuf)
 
 ## Features
