@@ -48,7 +48,9 @@ defmodule Protobuf do
         end
     end
 
-    proto_compile(opts[:from])
+    with {:ok, record_path} <- compile(:proto, opts[:from]),
+      do: compile(:bytecode, record_path)
+
     # from = Path.expand(opts[:from])
     # if File.exists?(from) do
     #   pattern = ~r/(.+\/)(\w+.proto)/i
@@ -64,32 +66,44 @@ defmodule Protobuf do
     config |> parse(__CALLER__) |> Builder.define(config)
   end
 
-  def proto_compile(path) when is_binary(path) do
+  def compile(:proto, path) when is_binary(path) do
     with {:ok, paths} <- extract_paths(path),
          true         <- File.exists?(paths["fullpath"]) do
-      proto_compile(paths)
+      compile(:proto, paths)
     else
       :error -> {:error, "Something went wrong!"}
     end
   end
 
-  def proto_compile(paths) when is_map(paths) do
+  def compile(:proto, paths) when is_map(paths) do
     record_path = ~w(priv gpb_records)
     |> Path.join
     |> Path.expand(File.cwd!)
     |> String.to_char_list
 
     case File.mkdir_p(record_path) do
-      :ok -> :gpb_compile.file(
-                paths["file_name"],
-                [{:i, paths["path"]},
-                {:o, record_path}, :mapfields_as_maps])
+      :ok ->
+        compilation = :gpb_compile.file(paths["file_name"],
+          [{:i, paths["path"]},
+           {:o, record_path}, :mapfields_as_maps])
+        {compilation, record_path}
       _   -> :error
     end
   end
 
-  # def compile(:bytecode, paths) do
-  # end
+  def compile(:bytecode, record_path) do
+    app_name = Mix.Project.get.project[:app] |> Atom.to_string
+     File.ls!(record_path) 
+     |> Enum.filter(&Regex.match?(~r/\.erl$/i, &1))
+     |> Enum.map(fn (source_file) ->
+        path = String.to_char_list(Path.join(record_path, source_file))
+        build_path = '_build'
+        if Mix.env == :dev, do: build_path = Path.join(build_path, 'dev')
+       :compile.file(path,
+         [{:i, Path.join(build_path, 'lib/gpb/include') |> String.to_char_list},
+          {:outdir, Path.join(build_path, 'lib/exprotobuf_demo/ebin') |> String.to_char_list}])
+     end)
+  end
 
   def extract_paths(path) when byte_size(path) > 0 do
     paths = ~r/(?<fullpath>(?<path>.+\/)(?<file_name>\w+.proto))/i
