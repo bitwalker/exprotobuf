@@ -3,14 +3,10 @@ defmodule Protobuf.Encoder do
   alias Protobuf.Field
   alias Protobuf.OneOfField
 
-  # import IEx
-
   def encode(%{} = msg, module) do
-    # fixed_msg = msg |> fix_undefined |> Utils.convert_to_record(msg.__struct__)
-    erl_module = :user
-    fixed_msg = msg |> Utils.convert_to_record(msg.__struct__) |> erl_module.encode_msg
-    #|> :gpb.encode_msg(fixed_defs)
-    # IEx.pry
+    fixed_msg = msg
+    |> Utils.convert_to_record(msg.__struct__)
+    |> module.erl_module.encode_msg
   end
 
   defp fix_undefined(%{} = msg) do

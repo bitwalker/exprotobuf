@@ -4,12 +4,9 @@ defmodule Protobuf.Decoder do
   alias Protobuf.OneOfField
   alias Protobuf.Utils
 
-  # import IEx
-
   # Decode with record/module
   def decode(bytes, module) do
-    erl_module = :user
-    erl_module.decode_msg(bytes, :User)
+    module.erl_module.decode_msg(bytes, :User)
     |> Utils.convert_from_record(module)
     # |> convert_fields
   end

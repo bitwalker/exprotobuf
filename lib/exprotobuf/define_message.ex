@@ -7,12 +7,8 @@ defmodule Protobuf.DefineMessage do
   alias Protobuf.OneOfField
   alias Protobuf.Delimited
 
-  # import IEx
-
-  def def_message(name, fields, [inject: inject, doc: doc]) when is_list(fields) do
+  def def_message(name, fields, [inject: inject, doc: doc, erl_module: erl_module]) when is_list(fields) do
     struct_fields = record_fields(fields)
-
-    # IEx.pry
 
     # Inject everything in 'using' module
     if inject do
@@ -46,9 +42,11 @@ defmodule Protobuf.DefineMessage do
           unquote(Protobuf.Config.doc_quote(doc))
           @root root
           @record unquote(struct_fields)
+          @erl_module unquote(erl_module)
           defstruct @record
 
           def record, do: @record
+          def erl_module, do: @erl_module
 
           unquote(encode_decode(name))
           unquote(fields_methods(fields))
@@ -116,10 +114,6 @@ defmodule Protobuf.DefineMessage do
     quote do
       def decode(data),         do: Decoder.decode(data, __MODULE__)
       def encode(%{} = record), do: Encoder.encode(record, __MODULE__)
-      # def decode(data),         do: Decoder.decode(data, __MODULE__)
-      # def encode(%{} = record), do: Encoder.encode(record, defs())
-      # def encode(data), do: :user.encode_msg(data)
-      # def decode(bin), do: :user.decode_msg(bin, :User)
       def decode_delimited(bytes),    do: Delimited.decode(bytes, __MODULE__)
       def encode_delimited(messages), do: Delimited.encode(messages)
     end

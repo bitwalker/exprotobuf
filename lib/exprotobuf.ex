@@ -7,8 +7,6 @@ defmodule Protobuf do
   alias Protobuf.OneOfField
   alias Protobuf.Utils
 
-  # import IEx
-
   defmacro __using__(opts) do
     config = case opts do
       << schema :: binary >> ->
@@ -49,21 +47,9 @@ defmodule Protobuf do
     end
 
     with {:ok, record_path} <- compile(:proto, opts[:from]),
-      do: compile(:bytecode, record_path)
-
-    # from = Path.expand(opts[:from])
-    # if File.exists?(from) do
-    #   pattern = ~r/(.+\/)(\w+.proto)/i
-    #   [_, path, file_name] = Regex.run(pattern, from)
-    #    record_path = ~w(priv gpb_records)
-    #   full_record_path = Path.expand(Path.join(record_path), File.cwd!)
-    #   File.mkdir_p(full_record_path)
-    #   :gpb_compile.file(String.to_char_list(file_name), [{:i, String.to_char_list(path)}, {:o, String.to_char_list(full_record_path)}, :mapfields_as_maps])
-    #   app_name = Mix.Project.get.project[:app] |> Atom.to_string
-    #   :compile.file(String.to_char_list(Path.join(full_record_path, "user.erl")), [{:i, '_build/dev/lib/gpb/include'}, {:outdir, String.to_char_list("_build/dev/lib/#{app_name}/ebin")}])
-    # end
-
-    config |> parse(__CALLER__) |> Builder.define(config)
+         [ok: erl_module]   <- compile(:bytecode, record_path),
+         config             <- %Config{config | erl_module: erl_module},
+      do: config |> parse(__CALLER__) |> Builder.define(config)
   end
 
   def compile(:proto, path) when is_binary(path) do
