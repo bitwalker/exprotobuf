@@ -1,3 +1,3 @@
-%{"earmark": {:hex, :earmark, "1.0.3", "89bdbaf2aca8bbb5c97d8b3b55c5dd0cff517ecc78d417e87f1d0982e514557b", [:mix], []},
-  "ex_doc": {:hex, :ex_doc, "0.14.5", "c0433c8117e948404d93ca69411dd575ec6be39b47802e81ca8d91017a0cf83c", [:mix], [{:earmark, "~> 1.0", [hex: :earmark, optional: false]}]},
-  "gpb": {:hex, :gpb, "3.26.6", "cd0b7e29d896bc7650ccbc4b6681db6cbec7a9c6d8a3d5e0e8b9bee454377597", [:make, :rebar], []}}
+%{"earmark": {:hex, :earmark, "1.2.2", "f718159d6b65068e8daeef709ccddae5f7fdc770707d82e7d126f584cd925b74", [:mix], [], "hexpm"},
+  "ex_doc": {:hex, :ex_doc, "0.16.1", "b4b8a23602b4ce0e9a5a960a81260d1f7b29635b9652c67e95b0c2f7ccee5e81", [:mix], [{:earmark, "~> 1.1", [hex: :earmark, repo: "hexpm", optional: false]}], "hexpm"},
+  "gpb": {:hex, :gpb, "3.27.0", "bc0e6d2a3eb11dc7c0f37a061e8dc110b8a4c0af49d3e564dff89890c1d11e04", [:make, :rebar], [], "hexpm"}}
