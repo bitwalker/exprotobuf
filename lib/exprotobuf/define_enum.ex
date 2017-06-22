@@ -11,11 +11,15 @@ defmodule Protobuf.DefineEnum do
     contents = for {atom, value} <- values do
       quote do
         def value(unquote(atom)), do: unquote(value)
-        def values(), do: unquote(enum_values)
         def atom(unquote(value)), do: unquote(atom)
-        def atoms(), do: unquote(enum_atoms)
       end
     end
+    contents = contents ++ [
+      quote do
+        def values, do: unquote(enum_values)
+        def atoms, do: unquote(enum_atoms)
+      end
+    ]
     if inject do
       quote do
         unquote(contents)
