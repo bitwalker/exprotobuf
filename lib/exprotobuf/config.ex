@@ -10,9 +10,10 @@ defmodule Protobuf.Config do
             schema: "",      # The schema as a string, either provided direct, or read from file.
             only: [],        # The list of types to load, if empty, all are loaded.
             erl_module: nil, # The Erlang module (record) to be used as base for (en|de)coding proto messages.
-            inject: false    # Flag which determines whether the types loaded are injected in the 'using' module.
+            inject: false,   # Flag which determines whether the types loaded are injected in the 'using' module.
                              # `inject: true` requires only with a single type defined, since no more than one struct
                              # can be defined per-module.
+            other: []        # Other options the could be passed to the Erlang's record compilation, e.g. :mapfields_as_maps.
   """
   defstruct namespace: nil,
             schema: "",
@@ -21,7 +22,8 @@ defmodule Protobuf.Config do
             from_file: nil,
             erl_module: nil,
             use_package_names: false,
-            doc: nil
+            doc: nil,
+            other: []
 
 
   def doc_quote(false) do

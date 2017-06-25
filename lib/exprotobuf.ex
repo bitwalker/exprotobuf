@@ -46,22 +46,22 @@ defmodule Protobuf do
         end
     end
 
-    with {:ok, record_path} <- compile(:proto, opts[:from]),
+    with {:ok, record_path} <- compile(:proto, opts[:from], [:mapfields_as_maps]),
          [ok: erl_module]   <- compile(:bytecode, record_path),
          config             <- %Config{config | erl_module: erl_module},
       do: config |> parse(__CALLER__) |> Builder.define(config)
   end
 
-  def compile(:proto, path) when is_binary(path) do
+  def compile(:proto, path, options) when is_binary(path) do
     with {:ok, paths} <- extract_paths(path),
          true         <- File.exists?(paths["fullpath"]) do
-      compile(:proto, paths)
+      compile(:proto, paths, options)
     else
       :error -> {:error, "Something went wrong!"}
     end
   end
 
-  def compile(:proto, paths) when is_map(paths) do
+  def compile(:proto, paths, options) when is_map(paths) do
     record_path = ~w(priv gpb_records)
     |> Path.join
     |> Path.expand(File.cwd!)
@@ -70,16 +70,18 @@ defmodule Protobuf do
     case File.mkdir_p(record_path) do
       :ok ->
         compilation = :gpb_compile.file(paths["file_name"],
-          [{:i, paths["path"]},
-           {:o, record_path}, :mapfields_as_maps])
+          [
+           {:i, paths["path"]},
+           {:o, record_path}
+          ] ++ options)
         {compilation, record_path}
-      _   -> :error
+      _  -> :error
     end
   end
 
   def compile(:bytecode, record_path) do
     app_name = Mix.Project.get.project[:app] |> Atom.to_string
-     File.ls!(record_path) 
+     File.ls!(record_path)
      |> Enum.filter(&Regex.match?(~r/\.erl$/i, &1))
      |> Enum.map(fn (source_file) ->
         path = String.to_char_list(Path.join(record_path, source_file))

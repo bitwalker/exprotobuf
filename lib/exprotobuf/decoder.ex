@@ -6,13 +6,21 @@ defmodule Protobuf.Decoder do
 
   # Decode with record/module
   def decode(bytes, module) do
-    module.erl_module.decode_msg(bytes, :User)
+    module.erl_module.decode_msg(bytes, to_module_atom(module))
     |> Utils.convert_from_record(module)
     # |> convert_fields
   end
 
   def varint(bytes) do
     :gpb.decode_varint(bytes)
+  end
+
+  defp to_module_atom(module) do
+    Atom.to_string(module)
+    |> String.split(".")
+    |> tl
+    |> Enum.join(".")
+    |> String.to_atom
   end
 
   defp convert_fields(msg) do
