@@ -8,7 +8,7 @@ defmodule Protobuf.Decoder do
   def decode(bytes, module) do
     module.erl_module.decode_msg(bytes, to_module_atom(module))
     |> Utils.convert_from_record(module)
-    # |> convert_fields
+    |> convert_fields
   end
 
   def varint(bytes) do
@@ -55,7 +55,12 @@ defmodule Protobuf.Decoder do
   defp convert_field(value, msg, %Field{name: field, type: type, occurrence: occurrence}) do
     case {occurrence, type} do
       {:repeated, _} ->
-        value = for v <- value, do: convert_value(type, v)
+        value =
+          cond  do
+            is_list(value) -> for v <- value, do: convert_value(type, v)
+            is_map(value)  -> convert_value(type, value)
+            true           -> value
+          end
         Map.put(msg, field, value)
       {_, :string}   ->
         Map.put(msg, field, convert_value(type, value))
@@ -82,6 +87,13 @@ defmodule Protobuf.Decoder do
     do: :unicode.characters_to_binary(value)
   defp convert_value({:msg, _}, value),
     do: value |> Utils.convert_from_record(elem(value, 0)) |> convert_fields
+  defp convert_value({:map, key_type, value_type}, value) when is_map(value) do
+    Enum.reduce(value, %{}, fn({key, value}, acc) ->
+      key   = convert_value(key_type, key)
+      value = convert_value(value_type, value)
+      Map.merge(acc, %{key => value})
+    end)
+  end
   defp convert_value({:map, key_type, value_type}, {key, value}),
     do: {convert_value(key_type, key), convert_value(value_type, value)}
   defp convert_value(_, value),
