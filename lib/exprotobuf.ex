@@ -24,11 +24,13 @@ defmodule Protobuf do
         end
       _ ->
         namespace = Keyword.get(opts, :namespace, __CALLER__.module)
-        doc = Keyword.get(opts, :doc, nil)
-        opts = Keyword.delete(opts, :doc)
-        opts = Keyword.delete(opts, :namespace)
+        doc       = Keyword.get(opts, :doc, nil)
 
-        case opts do
+        filtered_opts = Enum.filter(opts, fn({key, value}) ->
+          !Enum.member?(~w(doc namespace other)a, key)
+        end)
+
+        case filtered_opts do
           from: file ->
             %Config{namespace: namespace, from_file: file, doc: doc}
           from: file, use_package_names: use_package_names ->
@@ -46,7 +48,7 @@ defmodule Protobuf do
         end
     end
 
-    with {:ok, record_path} <- compile(:proto, opts[:from], [:mapfields_as_maps]),
+    with {:ok, record_path} <- compile(:proto, opts[:from], opts[:other]),
          [ok: erl_module]   <- compile(:bytecode, record_path),
          config             <- %Config{config | erl_module: erl_module},
       do: config |> parse(__CALLER__) |> Builder.define(config)
@@ -69,13 +71,12 @@ defmodule Protobuf do
 
     case File.mkdir_p(record_path) do
       :ok ->
-        compilation = :gpb_compile.file(paths["file_name"],
-          [
-           {:i, paths["path"]},
-           {:o, record_path}
-          ] ++ options)
+        compilation = :gpb_compile.file(
+          paths["file_name"],
+          [{:i, paths["path"]}, {:o, record_path}] ++ (options || [])
+        )
         {compilation, record_path}
-      _  -> :error
+      _ -> :error
     end
   end
 
