@@ -82,6 +82,8 @@ defmodule Protobuf.Decoder do
         module = elem(inner_value, 0)
         converted_value = {key, inner_value |> Utils.convert_from_record(module) |> convert_fields}
         Map.put(msg, field, converted_value)
+      is_list(inner_value) ->
+        Map.put(msg, field, {key, convert_value(:string, inner_value)})
       true ->
         Map.put(msg, field, value)
     end
