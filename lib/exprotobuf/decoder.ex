@@ -1,26 +1,19 @@
 defmodule Protobuf.Decoder do
   use Bitwise, only_operators: true
+
   alias Protobuf.Field
   alias Protobuf.OneOfField
   alias Protobuf.Utils
 
   # Decode with record/module
   def decode(bytes, module) do
-    module.erl_module.decode_msg(bytes, to_module_atom(module))
+    module.erl_module.decode_msg(bytes, Utils.to_module_atom(module))
     |> Utils.convert_from_record(module)
     |> convert_fields
   end
 
   def varint(bytes) do
     :gpb.decode_varint(bytes)
-  end
-
-  defp to_module_atom(module) do
-    Atom.to_string(module)
-    |> String.split(".")
-    |> tl
-    |> Enum.join(".")
-    |> String.to_atom
   end
 
   defp convert_fields(msg) do

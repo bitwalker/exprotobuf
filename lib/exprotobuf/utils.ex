@@ -1,5 +1,6 @@
 defmodule Protobuf.Utils do
   @moduledoc false
+
   alias Protobuf.OneOfField
   alias Protobuf.Field
 
@@ -15,7 +16,7 @@ defmodule Protobuf.Utils do
 
   defp record_name(OneOfField), do: :gpb_oneof
   defp record_name(Field), do: :field
-  defp record_name(type) when is_atom(type), do: :User
+  defp record_name(type) when is_atom(type), do: to_module_atom(type)
   defp record_name(type), do: type
 
   defp value_transform(OneOfField, value) when is_list(value) do
@@ -34,5 +35,13 @@ defmodule Protobuf.Utils do
         value = elem(rec, idx + 1)
         Map.put(acc, key, value)
     end)
+  end
+
+  def to_module_atom(module) do
+    Atom.to_string(module)
+    |> String.split(".")
+    |> tl
+    |> Enum.join(".")
+    |> String.to_atom
   end
 end
