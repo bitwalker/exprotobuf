@@ -23,7 +23,7 @@ defmodule Protobuf.Oneof.Test do
     binary = <<10, 4, 116, 101, 115, 116, 26, 3, 120, 120, 120>>
 
     msg = Msgs.SampleOneofMsg.decode(binary)
-    assert %Msgs.SampleOneofMsg{foo: {:body, 'xxx'}, one: "test"} == msg
+    assert %Msgs.SampleOneofMsg{foo: {:body, "xxx"}, one: "test"} == msg
   end
 
   test "stucture parsed simple one_of proto properly" do
