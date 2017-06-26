@@ -8,14 +8,20 @@ defmodule ProtobufTest do
         optional string f1 = 1;
         optional string f2 = 2 [default = "test"];
         optional uint32 f3 = 3;
+        oneof f4 {
+          string f4a = 4;
+        }
       }
       """
     end
 
-    msg = RoundtripProto2.Msg.new()
-    encoded = RoundtripProto2.Msg.encode(msg)
+    msg1 = RoundtripProto2.Msg.new()
+    encoded1 = RoundtripProto2.Msg.encode(msg1)
+    assert %{f1: nil, f2: "test", f3: nil, f4: nil} = RoundtripProto2.Msg.decode(encoded1)
 
-    assert %{f1: nil, f2: "test", f3: nil} = RoundtripProto2.Msg.decode(encoded)
+    msg2 = RoundtripProto2.Msg.new(f4: {:f4a, "test"})
+    encoded2 = RoundtripProto2.Msg.encode(msg2)
+    assert %{f4: {:f4a, "test"}} = RoundtripProto2.Msg.decode(encoded2)
   end
 
   test "can roundtrip encoding/decoding optional values in proto3" do
@@ -27,14 +33,20 @@ defmodule ProtobufTest do
         string f1 = 1;
         uint32 f2 = 2;
         bool f3 = 3;
+        oneof f4 {
+          string f4a = 4;
+        }
       }
       """
     end
 
-    msg = RoundtripProto3.Msg.new()
-    encoded = RoundtripProto3.Msg.encode(msg)
+    msg1 = RoundtripProto3.Msg.new()
+    encoded1 = RoundtripProto3.Msg.encode(msg1)
+    assert %{f1: "", f2: 0, f3: false, f4: nil} = RoundtripProto3.Msg.decode(encoded1)
 
-    assert %{f1: "", f2: 0, f3: false} = RoundtripProto3.Msg.decode(encoded)
+    msg2 = RoundtripProto3.Msg.new(f4: {:f4a, "test"})
+    encoded2 = RoundtripProto3.Msg.encode(msg2)
+    assert %{f4: {:f4a, "test"}} = RoundtripProto3.Msg.decode(encoded2)
   end
 
   test "can encode when protocol is extended with new optional field" do
