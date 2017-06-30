@@ -7,46 +7,54 @@ defmodule Protobuf do
   alias Protobuf.OneOfField
   alias Protobuf.Utils
 
-  defmacro __using__(opts) do
-    config = case opts do
-      << schema :: binary >> ->
-        %Config{namespace: __CALLER__.module, schema: schema}
-      [<< schema :: binary >>, only: only] ->
-        %Config{namespace: __CALLER__.module, schema: schema, only: parse_only(only, __CALLER__)}
-      [<< schema :: binary >>, inject: true] ->
-        only = __CALLER__.module |> Module.split |> Enum.join(".") |> String.to_atom
-        %Config{namespace: __CALLER__.module, schema: schema, only: [only], inject: true}
-      [<< schema :: binary >>, only: only, inject: true] ->
-        types = parse_only(only, __CALLER__)
-        case types do
-          []       -> raise ConfigError, error: "You must specify a type using :only when combined with inject: true"
-          [_type]  -> %Config{namespace: __CALLER__.module, schema: schema, only: types, inject: true}
-        end
-      _ ->
-        namespace = Keyword.get(opts, :namespace, __CALLER__.module)
-        doc       = Keyword.get(opts, :doc, nil)
+  defmacro __using__(schema) when is_binary(schema) do
+    config = %Config{namespace: __CALLER__.module, schema: schema}
+    config |> parse(__CALLER__) |> Builder.define(config)
+  end
+  defmacro __using__([schema | opts]) when is_binary(schema) do
+    namespace = __CALLER__.module
+    config =
+      case Enum.into(opts, %{}) do
+        %{only: only, inject: true} ->
+          types = parse_only(only, __CALLER__)
+          case types do
+            []       -> raise ConfigError, error: "You must specify a type using :only when combined with inject: true"
+            [_type]  -> %Config{namespace: namespace, schema: schema, only: types, inject: true}
+          end
+        %{only: only} ->
+          %Config{namespace: namespace, schema: schema, only: parse_only(only, __CALLER__)}
+        %{inject: true} ->
+          only = namespace |> Module.split |> Enum.join(".") |> String.to_atom
+          %Config{namespace: namespace, schema: schema, only: [only], inject: true}
+      end
+    config |> parse(__CALLER__) |> Builder.define(config)
+  end
+  defmacro __using__(opts) when is_list(opts) do
+    namespace = Keyword.get(opts, :namespace, __CALLER__.module)
+    doc       = Keyword.get(opts, :doc, nil)
 
-        filtered_opts = Enum.filter(opts, fn({key, value}) ->
-          !Enum.member?(~w(doc namespace other)a, key)
-        end)
+    filtered_opts = Enum.filter(opts, fn({key, value}) ->
+      !Enum.member?(~w(doc namespace other)a, key)
+    end)
 
-        case filtered_opts do
-          from: file ->
-            %Config{namespace: namespace, from_file: file, doc: doc}
-          from: file, use_package_names: use_package_names ->
-            %Config{namespace: namespace, from_file: file, use_package_names: use_package_names, doc: doc}
-          [from: file, only: only] ->
-            %Config{namespace: namespace, only: parse_only(only, __CALLER__), from_file: file, doc: doc}
-          [from: file, inject: true] ->
-            %Config{namespace: namespace,  only: [namespace], inject: true, from_file: file, doc: doc}
-          [from: file, only: only, inject: true] ->
-            types = parse_only(only, __CALLER__)
-            case types do
-              []       -> raise ConfigError, error: "You must specify a type using :only when combined with inject: true"
-              [_type]  -> %Config{namespace: namespace, only: types, inject: true, from_file: file, doc: doc}
-            end
-        end
-    end
+    config =
+      case Enum.into(filtered_opts, %{}) do
+        %{from: file, use_package_names: use_package_names} ->
+          %Config{namespace: namespace, from_file: file, use_package_names: use_package_names, doc: doc}
+        %{from: file, only: only, inject: true} ->
+          types = parse_only(only, __CALLER__)
+          case types do
+            []       -> raise ConfigError, error: "You must specify a type using :only when combined with inject: true"
+            [_type]  -> %Config{namespace: namespace, only: types, inject: true, from_file: file, doc: doc}
+          end
+        %{from: file, only: only} ->
+          %Config{namespace: namespace, only: parse_only(only, __CALLER__), from_file: file, doc: doc}
+        %{from: file, inject: true} ->
+          only = namespace |> Module.split |> Enum.join(".") |> String.to_atom
+          %Config{namespace: namespace,  only: [only], inject: true, from_file: file, doc: doc}
+        %{from: file} ->
+          %Config{namespace: namespace, from_file: file, doc: doc}
+      end
 
     with {:ok, record_path} <- compile(:proto, opts[:from], opts[:other]),
          [ok: erl_module]   <- compile(:bytecode, record_path),
@@ -115,11 +123,15 @@ defmodule Protobuf do
 
   # Parse and fix namespaces of parsed types
   defp parse(%Config{namespace: ns, schema: schema, inject: inject, from_file: nil}, _) do
-    Parser.parse_string!(schema) |> namespace_types(ns, inject)
+    schema
+    |> Parser.parse_string!
+    |> namespace_types(ns, inject)
   end
   defp parse(%Config{namespace: ns, inject: inject, from_file: file, use_package_names: use_package_names}, caller) do
     {paths, import_dirs} = resolve_paths(file, caller)
-    Parser.parse_files!(paths, [imports: import_dirs, use_packages: use_package_names]) |> namespace_types(ns, inject)
+    paths
+    |> Parser.parse_files!(imports: import_dirs, use_packages: use_package_names)
+    |> namespace_types(ns, inject)
   end
 
   # Apply namespace to top-level types
