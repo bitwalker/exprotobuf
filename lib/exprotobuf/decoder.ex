@@ -15,9 +15,8 @@ defmodule Protobuf.Decoder do
               %OneOfField{} -> Utils.convert_to_record(field, OneOfField)
             end
           end)}
-        :enum       -> {{:enum, mod}, fields}
-        :extensions -> {{:extensions, mod}, fields}
-        :service -> {{:service, mod}, fields}
+        type when type in [:enum, :extensions, :service, :group] ->
+          {{type, mod}, fields}
       end
     end
     :gpb.decode_msg(bytes, module, defs)
