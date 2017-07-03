@@ -24,7 +24,6 @@ defmodule Protobuf.Utils do
   end
   defp value_transform(_module, value), do: value
 
-
   def convert_from_record(rec, module) do
     map = struct(module)
 
