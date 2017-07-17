@@ -7,6 +7,7 @@ defmodule Protobuf.DefineMessage do
   alias Protobuf.OneOfField
   alias Protobuf.Delimited
 
+
   def def_message(name, fields, [inject: inject, doc: doc, erl_module: erl_module, syntax: syntax]) when is_list(fields) do
     struct_fields = record_fields(fields)
 
