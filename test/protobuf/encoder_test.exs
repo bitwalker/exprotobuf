@@ -40,7 +40,7 @@ defmodule Protobuf.Encoder.Test do
       }
       """
   end
-  
+
   #defmodule ExtensionsProto do
     #use Protobuf, """
     #message Msg {
@@ -74,6 +74,13 @@ defmodule Protobuf.Encoder.Test do
     assert <<8, 1>> == Protobuf.Serializable.serialize(msg)
   end
 
+  test "fails an invalid value for a submsg" do
+    wrong_msg = EncoderProto.WithRepeatedSubMsg.new(f1: [EncoderProto.Msg.new(f1: 1)])
+    msg = EncoderProto.WithSubMsg.new(f1: wrong_msg)
+    assert_raise(ErlangError, "some error from gpb I'm guessing", fn ->
+      Protobuf.Serializable.serialize(msg)
+    end)
+  end
   #test "it can create an extended message" do
     #msg = ExtensionsProto.Msg.new(name: "Ron", pseudonym: "Duke Silver")
     #assert msg == %ExtensionsProto.Msg{name: "Ron", pseudonym: "Duke Silver"}
