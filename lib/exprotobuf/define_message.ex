@@ -68,9 +68,11 @@ defmodule Protobuf.DefineMessage do
 
   defp constructors(name) do
     quote location: :keep do
-      def new(), do: new([])
+      def new(), do: new(%{})
       def new(values) when is_list(values) do
-        values = Enum.into(values, %{})
+        values |> Enum.into(%{}) |> new()
+      end
+      def new(values) when is_map(values) do
         s = struct(unquote(name))
         keys = Map.keys(Map.from_struct(s))
         Enum.reduce(keys, s, fn
