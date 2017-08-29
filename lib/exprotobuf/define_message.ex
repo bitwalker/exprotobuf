@@ -24,7 +24,7 @@ defmodule Protobuf.DefineMessage do
         unquote(fields_methods(fields))
         unquote(oneof_fields_methods(fields))
         unquote(meta_information())
-        unquote(constructors(name))
+        unquote(constructors(name, syntax))
 
         defimpl Protobuf.Serializable do
           def serialize(object), do: unquote(name).encode(object)
@@ -52,7 +52,7 @@ defmodule Protobuf.DefineMessage do
           unquote(oneof_fields_methods(fields))
           unquote(meta_information())
 
-          unquote(constructors(name))
+          unquote(constructors(name, syntax))
 
           if use_in != nil do
             Module.eval_quoted(__MODULE__, use_in, [], __ENV__)
@@ -66,7 +66,7 @@ defmodule Protobuf.DefineMessage do
     end
   end
 
-  defp constructors(name) do
+  defp constructors(name, syntax) do
     quote location: :keep do
       def new(), do: new([])
       def new(values) when is_list(values) do
@@ -87,26 +87,11 @@ defmodule Protobuf.DefineMessage do
           %Protobuf.Field{occurrence: :repeated} -> []
           x ->
             default = get_in(Map.from_struct(x), [:opts, :default])
-            syntax = __MODULE__.syntax()
-            case {x.type, syntax} do
-              {:string, :proto2} when not is_nil(default) ->
-                default
-              {:string, :proto2} ->
-                nil
-              {:string, :proto3} ->
-                ""
-              {ty, :proto2} when not is_nil(default) ->
-                default
-              {_ty, :proto2} ->
-                nil
-              {ty, :proto3} ->
-                case :gpb.proto3_type_default(ty, __MODULE__.defs) do
-                  :undefined -> nil
-                  default -> default
-                end
-            end
+            protocol_default(x.type, default)
         end
       end
+
+      unquote(protocol_default(syntax))
     end
   end
 
@@ -165,4 +150,25 @@ defmodule Protobuf.DefineMessage do
     |> Enum.reject(fn(field) -> is_nil(field) end)
   end
 
+  defp protocol_default(:proto2) do
+    quote do
+      defp protocol_default(_type, default) do
+        default
+      end
+    end
+  end
+  defp protocol_default(:proto3) do
+    quote do
+      defp protocol_default(:string, _default) do
+        ""
+      end
+      defp protocol_default(type, default) do
+        if :gpb.proto3_type_default(type, __MODULE__.defs) == :undefined do
+          nil
+        else
+          default
+        end
+      end
+    end
+  end
 end
