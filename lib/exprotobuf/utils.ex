@@ -37,6 +37,25 @@ defmodule Protobuf.Utils do
     end)
   end
 
+  def get_default(:proto2, field, module) do
+    Map.get(struct(module), field)
+  end
+  def get_default(:proto3, field, module) do
+    case module.defs(:field, field) do
+      %Protobuf.OneOfField{} -> nil
+      x ->
+        case x.type do
+          :string ->
+            ""
+          ty ->
+            case :gpb.proto3_type_default(ty, module.defs) do
+              :undefined -> nil
+              default -> default
+            end
+        end
+    end
+  end
+
   def to_module_atom(module) do
     Atom.to_string(module)
     |> String.split(".")

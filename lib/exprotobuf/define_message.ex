@@ -7,19 +7,22 @@ defmodule Protobuf.DefineMessage do
   alias Protobuf.OneOfField
   alias Protobuf.Delimited
 
-  def def_message(name, fields, [inject: inject, doc: doc, erl_module: erl_module, syntax: syntax]) when is_list(fields) do
-    struct_fields = record_fields(fields)
+
+  def def_message(name, fields, [inject: inject, doc: doc, erl_module: erl_module, options: options, syntax: syntax]) when is_list(fields) do
+    struct_fields = record_fields(fields, options)
 
     # Inject everything in 'using' module
     if inject do
       quote location: :keep do
         @root __MODULE__
         @record unquote(struct_fields)
+
         defstruct @record
         fields = unquote(struct_fields)
 
         def record, do: @record
         def erl_module, do: unquote(erl_module)
+        def options, do: unquote(options)
         def syntax, do: unquote(syntax)
 
         unquote(encode_decode(name))
@@ -42,13 +45,16 @@ defmodule Protobuf.DefineMessage do
         defmodule unquote(name) do
           @moduledoc false
           unquote(Protobuf.Config.doc_quote(doc))
+
           @root root
           @record unquote(struct_fields)
           @erl_module unquote(erl_module)
+
           defstruct @record
 
           def record, do: @record
           def erl_module, do: unquote(erl_module)
+          def options, do: unquote(options)
           def syntax, do: unquote(syntax)
 
           unquote(encode_decode(name))
@@ -115,10 +121,14 @@ defmodule Protobuf.DefineMessage do
     end
   end
 
-  defp record_fields(fields) do
+  defp record_fields(fields, options) do
     fields
     |> Enum.map(fn(field) ->
       case field do
+        %Field{name: name, occurrence: :repeated, type: type}
+        when is_tuple(type) and elem(type, 0) == :map ->
+          value = if Enum.member?(options, :mapfields_as_maps), do: Macro.escape(%{}), else: []
+          {name, value}
         %Field{name: name, occurrence: :repeated} ->
           {name, []}
         %Field{name: name, opts: [default: default]} ->

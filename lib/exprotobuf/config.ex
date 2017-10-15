@@ -13,7 +13,7 @@ defmodule Protobuf.Config do
             inject: false,   # Flag which determines whether the types loaded are injected in the 'using' module.
                              # `inject: true` requires only with a single type defined, since no more than one struct
                              # can be defined per-module.
-            other: []        # Other options the could be passed to the Erlang's record compilation, e.g. :mapfields_as_maps.
+            options: []      # Other options the could be passed to the Erlang's record compilation, e.g. :mapfields_as_maps.
   """
   defstruct namespace: nil,
             schema: "",
@@ -23,7 +23,7 @@ defmodule Protobuf.Config do
             erl_module: nil,
             use_package_names: false,
             doc: nil,
-            other: []
+            options: []
 
 
   def doc_quote(false) do

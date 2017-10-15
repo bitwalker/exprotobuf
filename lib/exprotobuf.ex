@@ -11,6 +11,7 @@ defmodule Protobuf do
     config = %Config{namespace: __CALLER__.module, schema: schema}
     config |> parse(__CALLER__) |> Builder.define(config)
   end
+
   defmacro __using__([schema | opts]) when is_binary(schema) do
     namespace = __CALLER__.module
     config =
@@ -29,6 +30,7 @@ defmodule Protobuf do
       end
     config |> parse(__CALLER__) |> Builder.define(config)
   end
+
   defmacro __using__(opts) when is_list(opts) do
     namespace = Keyword.get(opts, :namespace, __CALLER__.module)
     doc       = Keyword.get(opts, :doc, nil)
@@ -56,9 +58,10 @@ defmodule Protobuf do
           %Config{namespace: namespace, from_file: file, doc: doc}
       end
 
+    # TODO: apply the same to the defmacro above (string schema)
     with {:ok, record_path} <- compile(:proto, opts[:from], opts[:other]),
          [ok: erl_module]   <- compile(:bytecode, record_path),
-         config             <- %Config{config | erl_module: erl_module},
+         config             <- %Config{config | erl_module: erl_module, options: opts[:other]},
       do: config |> parse(__CALLER__) |> Builder.define(config)
   end
 

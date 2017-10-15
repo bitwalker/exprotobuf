@@ -53,16 +53,17 @@ defmodule Protobuf.Builder do
     doc        = Keyword.get(config, :doc, true)
     ns         = Keyword.get(config, :namespace)
     erl_module = Keyword.get(config, :erl_module)
+    options    = Keyword.get(config, :options, [])
 
     quotes = for {{item_type, item_name}, fields} <- msgs, item_type in [:msg, :proto3_msg, :enum], into: [] do
       if only != [] do
         is_child? = Enum.any?(only, fn o -> o != item_name and is_child_type?(item_name, o) end)
         if item_name in only or is_child? do
           case item_type do
-            :msg when is_child?        -> def_message(item_name |> fix_ns(ns), fields, inject: false, doc: doc, erl_module: erl_module, syntax: :proto2)
-            :msg                       -> def_message(ns, fields, inject: inject, doc: doc, erl_module: erl_module, syntax: :proto2)
-            :proto3_msg when is_child? -> def_message(item_name |> fix_ns(ns), fields, inject: false, doc: doc, erl_module: erl_module, syntax: :proto3)
-            :proto3_msg                -> def_message(ns, fields, inject: inject, doc: doc, erl_module: erl_module, syntax: :proto3)
+            :msg when is_child?        -> def_message(item_name |> fix_ns(ns), fields, inject: false, doc: doc, erl_module: erl_module, options: options, syntax: :proto2)
+            :msg                       -> def_message(ns, fields, inject: inject, doc: doc, erl_module: erl_module, options: options, syntax: :proto2)
+            :proto3_msg when is_child? -> def_message(item_name |> fix_ns(ns), fields, inject: false, doc: doc, erl_module: erl_module, options: options, syntax: :proto3)
+            :proto3_msg                -> def_message(ns, fields, inject: inject, doc: doc, erl_module: erl_module, options: options, syntax: :proto3)
             :enum when is_child?       -> def_enum(item_name |> fix_ns(ns), fields, inject: false, doc: doc)
             :enum                      -> def_enum(ns, fields, inject: inject, doc: doc)
             _                          -> []
@@ -70,8 +71,8 @@ defmodule Protobuf.Builder do
         end
       else
         case item_type do
-          :msg        -> def_message(item_name, fields, inject: false, doc: doc, erl_module: erl_module, syntax: :proto2)
-          :proto3_msg -> def_message(item_name, fields, inject: false, doc: doc, erl_module: erl_module, syntax: :proto3)
+          :msg        -> def_message(item_name, fields, inject: false, doc: doc, erl_module: erl_module, options: options, syntax: :proto2)
+          :proto3_msg -> def_message(item_name, fields, inject: false, doc: doc, erl_module: erl_module, options: options, syntax: :proto3)
           :enum       -> def_enum(item_name, fields, inject: false, doc: doc)
           _           -> []
         end
