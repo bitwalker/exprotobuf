@@ -10,7 +10,12 @@ defmodule Protobuf.Mixfile do
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
      consolidate_protocols: Mix.env == :prod,
-     deps: deps()]
+     deps: deps(),
+     dialyzer: [
+       plt_add_deps: :transitive,
+       ignore_warnings: ".dialyzer.ignore-warnings"
+     ]
+    ]
   end
 
   def application do
@@ -33,6 +38,7 @@ defmodule Protobuf.Mixfile do
 
   defp deps do
     [{:gpb, "~> 3.24"},
-     {:ex_doc, "~> 0.13", only: :dev}]
+     {:ex_doc, "~> 0.13", only: :dev},
+     {:dialyxir, "~> 0.5", only: :dev}]
   end
 end

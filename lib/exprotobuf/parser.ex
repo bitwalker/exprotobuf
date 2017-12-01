@@ -25,8 +25,6 @@ defmodule Protobuf.Parser do
             type_ref    = Enum.map(type, &Atom.to_string/1) |> Enum.join
             invalid_ref = Enum.reverse([field|root_path]) |> Enum.map(&Atom.to_string/1) |> Enum.join
             "Reference to undefined message or enum #{type_ref} at #{invalid_ref}"
-          _ when is_binary(error) ->
-            error
           _ ->
             Macro.to_string(error)
         end
