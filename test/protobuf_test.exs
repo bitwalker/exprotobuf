@@ -74,6 +74,61 @@ defmodule ProtobufTest do
     refute decoded.f2
   end
 
+  test "can encode when inject is used" do
+    defmodule Msg do
+      use Protobuf, ["""
+      message Msg {
+        required uint32 f1 = 1;
+      }
+      """, inject: true]
+    end
+    msg = Msg.new(f1: 1)
+    encoded = Msg.encode(msg)
+    decoded = Msg.decode(encoded)
+
+    assert 1 = decoded.f1
+  end
+
+  test "can encode when inject and only are used" do
+    defmodule Msg do
+      use Protobuf, ["""
+      message Msg {
+        required uint32 f1 = 1;
+      }
+      """, inject: true, only: [:Msg]]
+    end
+    msg = Msg.new(f1: 1)
+    encoded = Msg.encode(msg)
+    decoded = Msg.decode(encoded)
+
+    assert 1 = decoded.f1
+  end
+
+  test "can encode when inject is used and module is nested" do
+    defmodule Nested.Msg do
+      use Protobuf, ["""
+      message Msg {
+        required uint32 f1 = 1;
+      }
+      """, inject: true]
+    end
+    msg = Nested.Msg.new(f1: 1)
+    encoded = Nested.Msg.encode(msg)
+    decoded = Nested.Msg.decode(encoded)
+
+    assert 1 = decoded.f1
+  end
+
+  test "can encode when inject is used and definition loaded from a file" do
+    defmodule Basic do
+      use Protobuf, from: Path.expand("./proto/simple.proto", __DIR__), inject: true
+    end
+    basic = Basic.new(f1: 1)
+    encoded = Basic.encode(basic)
+    decoded = Basic.decode(encoded)
+    assert 1 == decoded.f1
+  end
+
   test "can decode when protocol is extended with new optional field" do
     defmodule BasicProto do
       use Protobuf, """
