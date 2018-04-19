@@ -81,7 +81,8 @@ defmodule Protobuf.Builder do
     quotes = for {{item_type, item_name}, fields} <- msgs, item_type in [:msg, :proto3_msg, :enum], into: [] do
       if only != [] do
         is_child? = Enum.any?(only, fn o -> o != item_name and is_child_type?(item_name, o) end)
-        if item_name in only or is_child? do
+        last_mod = last_module(item_name)
+        if last_mod in only or is_child? do
           case item_type do
             :msg when is_child?         -> def_message(item_name |> fix_ns(ns), fields, inject: false, doc: doc, syntax: :proto2)
             :msg                        -> def_message(ns, fields, inject: inject, doc: doc, syntax: :proto2)
@@ -125,5 +126,9 @@ defmodule Protobuf.Builder do
     ns_parts   = ns   |> Atom.to_string |> String.split(".", parts: :infinity)
     module     = name_parts -- ns_parts |> Enum.join |> String.to_atom
     :"#{ns}.#{module}"
+  end
+
+  defp last_module(namespace) do
+    namespace |> Module.split() |> List.last() |> String.to_atom()
   end
 end
