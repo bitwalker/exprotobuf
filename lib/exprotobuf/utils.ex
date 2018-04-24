@@ -3,6 +3,24 @@ defmodule Protobuf.Utils do
   alias Protobuf.OneOfField
   alias Protobuf.Field
 
+  def define_algebraic_type(ast_pair = [_, _]) do
+    {
+      :|,
+      [],
+      ast_pair
+    }
+  end
+  def define_algebraic_type([ast_item | rest_ast_list]) do
+    {
+      :|,
+      [],
+      [
+        ast_item,
+        define_algebraic_type(rest_ast_list)
+      ]
+    }
+  end
+
   def convert_to_record(map, module) do
     module.record
     |> Enum.reduce([record_name(module)], fn {key, default}, acc ->

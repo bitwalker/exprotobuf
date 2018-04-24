@@ -136,6 +136,8 @@ defmodule Protobuf.DefineMessage do
     # typespec_ast
     # |> Macro.to_string
     # |> IO.puts
+    #
+    # IO.puts("")
 
     typespec_ast
   end
