@@ -187,6 +187,26 @@ defmodule ProtobufTest do
     assert %{:__struct__ => ^mod, :f1 => 1} = mod.new(f1: 1)
   end
 
+  test "namespaces of not injected modules are valid with inject" do
+    contents = quote do
+      use Protobuf, ["
+       message A {
+           required uint32 f1 = 1;
+           optional B b = 2;
+       }
+
+       message B {
+           required uint32 fB = 1;
+       }
+      ", inject: true]
+    end
+
+    {:module, mod, _, _} = Module.create(A, contents, Macro.Env.location(__ENV__))
+    def_a = Enum.find(mod.defs, &match?({{:msg, A}, _}, &1))
+    {:msg, ns_field_b} = def_a |> elem(1) |> Enum.at(1) |> Map.get(:type)
+    assert ns_field_b == B
+  end
+
   test "do not set default value for optional" do
     defmodule DefaultValueForOptionalsProto do
       use Protobuf, "message Msg { optional uint32 f1 = 1; }"

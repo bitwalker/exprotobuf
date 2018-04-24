@@ -88,34 +88,35 @@ defmodule Protobuf do
 
       if inject do
         ns_init = drop_last_module(ns)
-        {{parsed_type, :"#{ns_init}.#{name |> normalize_name}"}, namespace_fields(type, fields, ns)}
+        {{parsed_type, :"#{ns_init}.#{name |> normalize_name}"}, namespace_fields(type, fields, ns, true)}
       else
-        {{parsed_type, :"#{ns}.#{name |> normalize_name}"}, namespace_fields(type, fields, ns)}
+        {{parsed_type, :"#{ns}.#{name |> normalize_name}"}, namespace_fields(type, fields, ns, false)}
       end
     end
   end
 
   # Apply namespace to nested types
-  defp namespace_fields(:msg, fields, ns),        do: Enum.map(fields, &namespace_fields(&1, ns))
-  defp namespace_fields(:proto3_msg, fields, ns), do: Enum.map(fields, &namespace_fields(&1, ns))
-  defp namespace_fields(_, fields, _),            do: fields
-  defp namespace_fields(field, ns) when not is_map(field) do
+  defp namespace_fields(:msg, fields, ns, inject),        do: Enum.map(fields, &namespace_fields(&1, ns, inject))
+  defp namespace_fields(:proto3_msg, fields, ns, inject), do: Enum.map(fields, &namespace_fields(&1, ns, inject))
+  defp namespace_fields(_, fields, _, _),            do: fields
+  defp namespace_fields(field, ns, inject) when not is_map(field) do
     case elem(field, 0) do
-      :gpb_oneof -> field |> Utils.convert_from_record(OneOfField) |> namespace_fields(ns)
-      _          -> field |> Utils.convert_from_record(Field) |> namespace_fields(ns)
+      :gpb_oneof -> field |> Utils.convert_from_record(OneOfField) |> namespace_fields(ns, inject)
+      _          -> field |> Utils.convert_from_record(Field) |> namespace_fields(ns, inject)
     end
   end
-  defp namespace_fields(%Field{type: {:map, key_type, value_type}} = field, ns) do
+  defp namespace_fields(%Field{type: {:map, key_type, value_type}} = field, ns, _inject) do
     %{field | :type => {:map, key_type |> namespace_map_type(ns), value_type |> namespace_map_type(ns)}}
   end
-  defp namespace_fields(%Field{type: {type, name}} = field, ns) do
-    %{field | :type => {type, :"#{ns}.#{name |> normalize_name}"}}
+  defp namespace_fields(%Field{type: {type, name}} = field, ns, inject) do
+    field_ns = if inject, do: drop_last_module(ns), else: ns
+    %{field | :type => {type, :"#{field_ns}.#{name |> normalize_name}"}}
   end
-  defp namespace_fields(%Field{} = field, _ns) do
+  defp namespace_fields(%Field{} = field, _ns, _inject) do
     field
   end
-  defp namespace_fields(%OneOfField{} = field, ns) do
-    field |> Map.put(:fields, Enum.map(field.fields, &namespace_fields(&1, ns)))
+  defp namespace_fields(%OneOfField{} = field, ns, inject) do
+    field |> Map.put(:fields, Enum.map(field.fields, &namespace_fields(&1, ns, inject)))
   end
 
   defp namespace_map_type({:msg, name}, ns) do
