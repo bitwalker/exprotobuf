@@ -20,6 +20,8 @@ defmodule Protobuf.DefineMessage do
         def record, do: @record
         def syntax, do: unquote(syntax)
 
+        unquote(define_typespec(fields))
+
         unquote(encode_decode(name))
         unquote(fields_methods(fields))
         unquote(oneof_fields_methods(fields))
@@ -47,6 +49,8 @@ defmodule Protobuf.DefineMessage do
           def record, do: @record
           def syntax, do: unquote(syntax)
 
+          unquote(define_typespec(fields))
+
           unquote(encode_decode(name))
           unquote(fields_methods(fields))
           unquote(oneof_fields_methods(fields))
@@ -72,6 +76,115 @@ defmodule Protobuf.DefineMessage do
       def new(values) do
         struct(unquote(name), values)
       end
+    end
+  end
+
+  defp define_typespec(field_list) do
+
+    field_specs_ast =
+      field_list
+      |> Enum.map(fn
+
+        %Protobuf.Field{
+          name: field_name,
+          occurrence: :required,
+          type: type,
+        } ->
+          {field_name, define_field_typespec(type)}
+
+        %Protobuf.Field{
+          name: field_name,
+          occurrence: :optional,
+          type: type,
+        } ->
+          {field_name, quote do unquote(define_field_typespec(type)) | nil end}
+
+        %Protobuf.Field{
+          name: field_name,
+          occurrence: :repeated,
+          type: type,
+        } ->
+          {field_name, quote do [unquote(define_field_typespec(type))] end}
+
+        %Protobuf.OneOfField{
+          name: field_name,
+          fields: one_of_fields,
+        } ->
+          {
+            field_name,
+            one_of_fields
+            |> Enum.map(fn(%Protobuf.Field{type: type}) -> define_field_typespec(type) end)
+            |> case do
+              [typespec] -> typespec
+              typespec_list = [_ | _] -> Protobuf.Utils.define_algebraic_type(typespec_list)
+            end
+          }
+      end)
+
+    typespec_ast =
+      {:@, [context: Elixir, import: Kernel],
+       [
+         {:type, [context: Elixir],
+          [
+            {:::, [],
+             [
+               {:t, [], Elixir},
+               {:%, [],
+                [
+                  {:__MODULE__, [], Elixir},
+                  {:%{}, [], field_specs_ast}
+                ]}
+             ]}
+          ]}
+       ]}
+
+    # typespec_ast
+    # |> Macro.to_string
+    # |> IO.puts
+    #
+    # IO.puts("")
+
+    typespec_ast
+  end
+
+  defp define_field_typespec(type) do
+    case type do
+      {:msg, field_module} ->
+        quote do
+          unquote(field_module).t()
+        end
+      {:enum, field_module} ->
+        quote do
+          unquote(field_module).t()
+        end
+      {:map, key_type, value_type} ->
+        key_type_ast = define_field_typespec(key_type)
+        value_type_ast = define_field_typespec(value_type)
+        quote do
+          [{unquote(key_type_ast), unquote(value_type_ast)}]
+        end
+      _ ->
+        define_scalar_typespec(type)
+    end
+  end
+
+  defp define_scalar_typespec(type) do
+    case type do
+      :double ->  quote do float() end
+      :float -> quote do float() end
+      :int32 -> quote do integer() end
+      :int64 -> quote do integer() end
+      :uint32 -> quote do non_neg_integer() end
+      :uint64 -> quote do non_neg_integer() end
+      :sint32 -> quote do integer() end
+      :sint64 -> quote do integer() end
+      :fixed32 -> quote do non_neg_integer() end
+      :fixed64 -> quote do non_neg_integer() end
+      :sfixed32 -> quote do integer() end
+      :sfixed64 -> quote do integer() end
+      :bool -> quote do boolean() end
+      :string -> quote do String.t() end
+      :bytes -> quote do binary() end
     end
   end
 
