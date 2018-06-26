@@ -13,6 +13,22 @@ defmodule Protobuf.FromMultipleFiles.Test do
     assert %{authorization: "please?"} = TopLevel.WebsocketServerContainer.new(authorization: "please?")
   end
 
+  test "can parse custom options" do
+    defmodule TopLevel do
+      use Protobuf, from: [Path.expand("../proto/custom_option.proto", __DIR__),
+                           Path.expand("../proto/descriptor.proto", __DIR__)],
+        use_package_names: true
+    end
+
+    msg_def = TopLevel.Basic.defs |> Enum.filter(
+      fn {{type, ns}, _} -> type == :msg and
+        ns == Protobuf.FromMultipleFiles.Test.TopLevel.Basic end)
+    opts = get_in(msg_def, [Access.at(0), Access.elem(1), Access.at(0), Access.key(:opts)])
+    my_field_option = Enum.filter(opts, fn opt ->
+      is_tuple(opt) and elem(opt, 0) |> Enum.at(0) == :my_field_option end) |> Enum.at(0)
+    assert {[:my_field_option], 4.5} = my_field_option
+  end
+
   test "prefixs module names with the package names" do
     defmodule WithPackageNames do
       use Protobuf, from: [Path.expand("../proto/basic.proto", __DIR__),

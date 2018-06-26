@@ -1,0 +1,11 @@
+syntax = "proto2";
+
+import "google/protobuf/descriptor.proto";
+
+extend google.protobuf.FieldOptions {
+  optional float my_field_option = 50002;
+}
+
+message Basic {
+  optional uint32 f1 = 1 [(my_field_option) = 4.5, deprecated = true];
+}
