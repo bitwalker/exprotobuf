@@ -2,8 +2,9 @@ defmodule Protobuf.Mixfile do
   use Mix.Project
 
   def project do
-    [app: :exprotobuf,
-     version: "1.2.11",
+    [organization: "coingaming",
+     app: :exprotobuf,
+     version: "1.2.10",
      elixir: "~> 1.2",
      elixirc_paths: elixirc_paths(Mix.env),
      description: description(),
@@ -27,7 +28,6 @@ defmodule Protobuf.Mixfile do
 
   defp package do
     [ files: ["lib", "mix.exs", "README.md", "LICENSE"],
-      maintainers: ["Paul Schoenfelder"],
       licenses: ["Apache Version 2.0"],
       links: %{"GitHub": "https://github.com/bitwalker/exprotobuf"} ]
   end
