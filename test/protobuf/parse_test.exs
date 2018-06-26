@@ -16,7 +16,7 @@ defmodule Protobuf.Parse.Test do
       ]
     }]
 
-    [_, {msg, [field]} | _] = Parser.parse_string!(msg)
+    [_, _, {msg, [field]} | _] = Parser.parse_string!(msg)
 
     assert {:msg, :Msg} == msg
     assert {:enum, :"Msg.Type"} == elem(field, 4)

@@ -15,7 +15,8 @@ defmodule Protobuf.Decoder do
               %OneOfField{} -> Utils.convert_to_record(field, OneOfField)
             end
           end)}
-        type when type in [:enum, :extensions, :service, :group] ->
+          type when type in [:enum, :extensions, :service, :group,
+                              :msg_containment, :service_containment, :rpc_containment] ->
           {{type, mod}, fields}
       end
     end

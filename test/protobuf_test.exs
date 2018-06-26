@@ -311,7 +311,7 @@ defmodule ProtobufTest do
     defmodule ProtoDefsProto do
       use Protobuf, "message Msg { optional uint32 f1 = 1; }"
     end
-    defs = [{{:msg, ProtoDefsProto.Msg}, [%Protobuf.Field{name: :f1, fnum: 1, rnum: 2, type: :uint32, occurrence: :optional, opts: []}]}]
+    defs = [{{:msg_containment, "<no-file>"}, [:Msg]}, {{:msg, ProtoDefsProto.Msg}, [%Protobuf.Field{name: :f1, fnum: 1, rnum: 2, type: :uint32, occurrence: :optional, opts: []}]}]
     assert defs == ProtoDefsProto.defs
     assert defs == ProtoDefsProto.Msg.defs
   end

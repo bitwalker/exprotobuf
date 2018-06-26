@@ -12,7 +12,8 @@ defmodule Protobuf.Encoder do
             %Field{} -> field |> Utils.convert_to_record(Field)
           end
         end)}
-        type when type in [:enum, :extensions, :service, :group] ->
+          type when type in [:enum, :extensions, :service, :group,
+                              :msg_containment, :service_containment, :rpc_containment] ->
           {{type, mod}, fields}
       end
     end

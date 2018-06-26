@@ -83,14 +83,17 @@ defmodule Protobuf do
 
   # Apply namespace to top-level types
   defp namespace_types(parsed, ns, inject) do
-    for {{type, name}, fields} <- parsed do
+    for (current = {{type, name}, fields}) <- parsed do
       parsed_type = if :gpb.is_msg_proto3(name, parsed), do: :proto3_msg, else: type
-
-      if inject do
-        ns_init = drop_last_module(ns)
-        {{parsed_type, :"#{ns_init}.#{name |> normalize_name}"}, namespace_fields(type, fields, ns, true)}
-      else
-        {{parsed_type, :"#{ns}.#{name |> normalize_name}"}, namespace_fields(type, fields, ns, false)}
+      cond do
+        parsed_type in [:msg_containment, :service_containment,
+                         :rpc_containment, :pkg_containment] ->
+          current
+        inject ->
+          ns_init = drop_last_module(ns)
+          {{parsed_type, :"#{ns_init}.#{name |> normalize_name}"}, namespace_fields(type, fields, ns, true)}
+        true ->
+          {{parsed_type, :"#{ns}.#{name |> normalize_name}"}, namespace_fields(type, fields, ns, false)}
       end
     end
   end
