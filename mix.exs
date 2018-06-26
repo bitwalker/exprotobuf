@@ -26,11 +26,10 @@ defmodule Protobuf.Mixfile do
   end
 
   defp package do
-    [ organization: "coingaming",
-      files: ["lib", "mix.exs", "README.md", "LICENSE"],
-      maintainers: ["Paul Schoenfelder", "Ilja Tkachuk aka timCF"],
+    [ files: ["lib", "mix.exs", "README.md", "LICENSE"],
+      maintainers: ["Paul Schoenfelder"],
       licenses: ["Apache Version 2.0"],
-      links: %{"GitHub": "https://github.com/coingaming/exprotobuf"} ]
+      links: %{"GitHub": "https://github.com/bitwalker/exprotobuf"} ]
   end
 
   defp deps do
