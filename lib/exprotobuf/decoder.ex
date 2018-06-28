@@ -16,7 +16,8 @@ defmodule Protobuf.Decoder do
             end
           end)}
           type when type in [:enum, :extensions, :service, :group,
-                              :msg_containment, :service_containment, :rpc_containment] ->
+                             :msg_containment, :service_containment, :rpc_containment, :pkg_containment,
+                             :reserved_numbers] ->
           {{type, mod}, fields}
       end
     end
