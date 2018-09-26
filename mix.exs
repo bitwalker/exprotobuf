@@ -36,7 +36,7 @@ defmodule Protobuf.Mixfile do
   defp deps do
     [
       {:gpb, "~> 3.24"},
-      {:ex_doc, "~> 0.13", only: :dev},
+      {:ex_doc, "~> 0.19", only: :dev},
       {:benchfella, "~> 0.3.0", only: [:dev, :test], runtime: false}
     ]
   end
