@@ -114,10 +114,7 @@ defmodule Protobuf.DefineMessage do
             field_name,
             one_of_fields
             |> Enum.map(fn(%Protobuf.Field{type: type}) -> define_field_typespec(type) end)
-            |> case do
-              [typespec] -> typespec
-              typespec_list = [_ | _] -> Protobuf.Utils.define_algebraic_type(typespec_list)
-            end
+            |> Protobuf.Utils.define_algebraic_type
           }
       end)
 

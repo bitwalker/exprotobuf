@@ -3,6 +3,9 @@ defmodule Protobuf.Utils do
   alias Protobuf.OneOfField
   alias Protobuf.Field
 
+  def define_algebraic_type([ast_item]) do
+    ast_item
+  end
   def define_algebraic_type(ast_pair = [_, _]) do
     {
       :|,
