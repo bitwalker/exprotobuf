@@ -66,6 +66,8 @@ defmodule Protobuf.DefineMessage do
             def serialize(object), do: unquote(name).encode(object)
           end
         end
+
+        unquote(define_oneof_modules(name, fields))
       end
     end
   end
@@ -147,6 +149,44 @@ defmodule Protobuf.DefineMessage do
     # IO.puts("")
 
     typespec_ast
+  end
+
+  defp define_oneof_modules(namespace, field_list) do
+    field_list
+    |> Enum.filter(fn
+      %Protobuf.OneOfField{} -> true
+      %_{} -> false
+    end)
+    |> Enum.reduce(quote do end, &(define_oneof_instance_module(namespace, &1, &2)))
+  end
+
+  defp define_oneof_instance_module(namespace,
+                                    %Protobuf.OneOfField{
+                                      name: field_name,
+                                      fields: one_of_fields
+                                    },
+                                    ast_acc) do
+    module_subname =
+      field_name
+      |> Atom.to_string
+      |> Macro.camelize
+      |> String.to_atom
+
+    quote do
+      defmodule unquote([namespace, :OneOf, module_subname] |> Module.concat) do
+        unquote(Enum.reduce(one_of_fields, quote do end, &define_oneof_instance_macro/2))
+      end
+      unquote(ast_acc)
+    end
+  end
+
+  defp define_oneof_instance_macro(%Protobuf.Field{name: name}, ast_acc) do
+    quote do
+      defmacro unquote(name)(expression_ast) do
+        {unquote(name), expression_ast}
+      end
+      unquote(ast_acc)
+    end
   end
 
   defp define_field_typespec(type) do
