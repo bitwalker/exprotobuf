@@ -183,7 +183,10 @@ defmodule Protobuf.DefineMessage do
   defp define_oneof_instance_macro(%Protobuf.Field{name: name}, ast_acc) do
     quote do
       defmacro unquote(name)(expression_ast) do
-        {unquote(name), expression_ast}
+        inner_name = unquote(name)
+        quote do
+          {unquote(inner_name), unquote(expression_ast)}
+        end
       end
       unquote(ast_acc)
     end
