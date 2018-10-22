@@ -22,6 +22,7 @@ defmodule Protobuf.Decoder do
     :gpb.decode_msg(bytes, module, defs)
     |> Utils.convert_from_record(module)
     |> convert_fields
+    |> unwrap_scalars(module.defs |> Utils.msg_defs)
   end
 
   def varint(bytes) do
@@ -96,4 +97,74 @@ defmodule Protobuf.Decoder do
     do: {convert_value(key_type, key), convert_value(value_type, value)}
   defp convert_value(_, value),
     do: value
+
+  defp unwrap_scalars(%msg_module{} = msg, %{} = defs) do
+    msg
+    |> Map.from_struct
+    |> Enum.reduce(msg, fn
+      # nil is unwrapped
+      {_, nil}, acc = %_{} ->
+        acc
+      # recursive unwrap repeated
+      {k, v}, acc = %_{} when is_list(v) ->
+        Map.put(acc, k, Enum.map(v, &(unwrap_scalars(&1, defs))))
+      # unwrap scalars and messages
+      {k, {oneof, v}}, acc = %_{} ->
+        Map.put(acc, k, {oneof, do_unwrap(v, [msg_module, k, oneof], defs)})
+      {k, v}, acc = %_{} ->
+        Map.put(acc, k, do_unwrap(v, [msg_module, k], defs))
+    end)
+  end
+  defp unwrap_scalars(v, %{}), do: v
+
+  defp do_unwrap(v, keys = [_ | _], defs = %{}) do
+    defs
+    |> get_in(keys)
+    |> case do
+      %Protobuf.Field{type: scalar} when is_atom(scalar) ->
+        v
+      %Protobuf.Field{type: {:enum, module}} when is_atom(module) ->
+        v
+      %Protobuf.Field{type: {:msg, module}} when is_atom(module) ->
+        Utils.standard_scalar_wrappers
+        |> MapSet.member?(module |> Module.split |> Stream.take(-3) |> Enum.join("."))
+        |> case do
+          true ->
+            %_{value: value} = v
+            value
+          false ->
+            do_unwrap_enum(v, module, defs)
+        end
+    end
+  end
+
+  defp do_unwrap_enum(v, module, defs = %{}) do
+    defs
+    |> Map.get(module)
+    |> Enum.to_list
+    |> case do
+      [value: %Field{type: {:enum, enum_module}}] ->
+        module
+        |> to_string
+        |> Kernel.==("#{enum_module}Value")
+        |> case do
+          true ->
+            %_{value: value} = v
+            value
+          false ->
+            #
+            # TODO : check safety of this recursive call
+            #
+            # recursive unwrap nested messages
+            unwrap_scalars(v, defs)
+        end
+      _ ->
+        #
+        # TODO : check safety of this recursive call
+        #
+        # recursive unwrap nested messages
+        unwrap_scalars(v, defs)
+    end
+  end
+
 end

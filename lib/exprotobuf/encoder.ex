@@ -18,6 +18,7 @@ defmodule Protobuf.Encoder do
     end
 
     msg
+    |> wrap_scalars(defs |> Utils.msg_defs)
     |> fix_undefined
     |> Utils.convert_to_record(msg.__struct__)
     |> :gpb.encode_msg(fixed_defs)
@@ -41,4 +42,71 @@ defmodule Protobuf.Encoder do
   defp fix_value(value)  when is_map(value),   do: value |> fix_undefined |> Utils.convert_to_record(value.__struct__)
   defp fix_value(value)  when is_tuple(value), do: value |> Tuple.to_list |> Enum.map(&fix_value/1) |> List.to_tuple
   defp fix_value(value),                       do: value
+
+  defp wrap_scalars(%msg_module{} = msg, %{} = defs) do
+    msg
+    |> Map.from_struct
+    |> Enum.reduce(msg, fn
+      # nil is unwrapped
+      {_, nil}, acc = %_{} ->
+        acc
+      # recursive wrap repeated
+      {k, v}, acc = %_{} when is_list(v) ->
+        Map.put(acc, k, Enum.map(v, &(wrap_scalars(&1, defs))))
+      # recursive wrap message
+      {k, {oneof, v = %_{}}}, acc = %_{} ->
+        Map.put(acc, k, {oneof, wrap_scalars(v, defs)})
+      {k, v = %_{}}, acc = %_{} ->
+        Map.put(acc, k, wrap_scalars(v, defs))
+      # plain wrap scalar
+      {k, {oneof, v}}, acc = %_{} ->
+        Map.put(acc, k, {oneof, do_wrap(v, [msg_module, k, oneof], defs)})
+      {k, v}, acc = %_{} ->
+        Map.put(acc, k, do_wrap(v, [msg_module, k], defs))
+    end)
+  end
+  defp wrap_scalars(v, %{}), do: v
+
+  defp do_wrap(v, keys = [_ | _], defs = %{}) do
+    defs
+    |> get_in(keys)
+    |> case do
+      %Protobuf.Field{type: scalar} when is_atom(scalar) ->
+        v
+      %Protobuf.Field{type: {:enum, module}} when is_atom(module) ->
+        v
+      %Protobuf.Field{type: {:msg, module}} when is_atom(module) ->
+        Utils.standard_scalar_wrappers
+        |> MapSet.member?(module |> Module.split |> Stream.take(-3) |> Enum.join("."))
+        |> case do
+          true ->
+            module.new
+            |> Map.put(:value, v)
+          false ->
+            do_wrap_enum(v, module, defs)
+        end
+    end
+  end
+
+  defp do_wrap_enum(v, module, defs = %{}) do
+    defs
+    |> Map.get(module)
+    |> Enum.to_list
+    |> case do
+      [value: %Field{type: {:enum, enum_module}}] ->
+        module
+        |> to_string
+        |> Kernel.==("#{enum_module}Value")
+        |> case do
+          true ->
+            module.new
+            |> Map.put(:value, v)
+          false ->
+            v
+        end
+      _ ->
+        v
+    end
+  end
+
 end

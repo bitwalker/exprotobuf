@@ -3,6 +3,22 @@ defmodule Protobuf.Utils do
   alias Protobuf.OneOfField
   alias Protobuf.Field
 
+  @standard_scalar_wrappers %{
+    "Google.Protobuf.DoubleValue" => true,
+    "Google.Protobuf.FloatValue" => true,
+    "Google.Protobuf.Int64Value" => true,
+    "Google.Protobuf.UInt64Value" => true,
+    "Google.Protobuf.Int32Value" => true,
+    "Google.Protobuf.UInt32Value" => true,
+    "Google.Protobuf.BoolValue" => true,
+    "Google.Protobuf.StringValue" => true,
+    "Google.Protobuf.BytesValue" => true,
+  }
+  |> Map.keys
+  |> MapSet.new
+
+  def standard_scalar_wrappers, do: @standard_scalar_wrappers
+
   def define_algebraic_type([ast_item]) do
     ast_item
   end
@@ -32,6 +48,26 @@ defmodule Protobuf.Utils do
     end)
     |> Enum.reverse
     |> List.to_tuple
+  end
+
+  def msg_defs(defs) when is_list(defs) do
+    defs
+    |> Enum.reduce(%{}, fn
+      {{:msg, module}, meta}, acc = %{} ->
+        Map.put(acc, module, do_msg_defs(meta))
+      {{type, _}, _}, acc = %{} when type in [:enum, :extensions, :service, :group] ->
+        acc
+    end)
+  end
+
+  defp do_msg_defs(defs) when is_list(defs) do
+    defs
+    |> Enum.reduce(%{}, fn
+      meta = %Protobuf.Field{name: name}, acc = %{} ->
+        Map.put(acc, name, meta)
+      %Protobuf.OneOfField{name: name, fields: fields}, acc = %{} ->
+        Map.put(acc, name, do_msg_defs(fields))
+    end)
   end
 
   defp record_name(OneOfField), do: :gpb_oneof
