@@ -27,7 +27,16 @@ defmodule Protobuf.Utils do
     end
   end
 
-  def standard_scalar_wrappers, do: @standard_scalar_wrappers
+  def is_standard_scalar_wrapper(module) when is_atom(module) do
+    @standard_scalar_wrappers
+    |> MapSet.member?(module |> Module.split |> Stream.take(-3) |> Enum.join("."))
+  end
+
+  def is_enum_wrapper(module, enum_module) when is_atom(module) and is_atom(enum_module) do
+    module
+    |> to_string
+    |> Kernel.==("#{enum_module}Value")
+  end
 
   def define_algebraic_type([ast_item]) do
     ast_item

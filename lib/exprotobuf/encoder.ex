@@ -76,8 +76,8 @@ defmodule Protobuf.Encoder do
       %Field{type: {:enum, module}} when is_atom(module) ->
         v
       %Field{type: {:msg, module}} when is_atom(module) ->
-        Utils.standard_scalar_wrappers
-        |> MapSet.member?(module |> Module.split |> Stream.take(-3) |> Enum.join("."))
+        module
+        |> Utils.is_standard_scalar_wrapper
         |> case do
           true ->
             module.new
@@ -95,8 +95,7 @@ defmodule Protobuf.Encoder do
     |> case do
       [value: %Field{type: {:enum, enum_module}}] ->
         module
-        |> to_string
-        |> Kernel.==("#{enum_module}Value")
+        |> Utils.is_enum_wrapper(enum_module)
         |> case do
           true ->
             module.new
