@@ -27,7 +27,7 @@ defmodule Protobuf.Mixfile do
 
   defp package do
     [ organization: "coingaming",
-      files: ["lib", "mix.exs", "README.md", "LICENSE"],
+      files: ["lib", "mix.exs", "README.md", "LICENSE", "priv"],
       maintainers: ["Paul Schoenfelder", "Ilja Tkachuk aka timCF"],
       licenses: ["Apache Version 2.0"],
       links: %{"GitHub": "https://github.com/coingaming/exprotobuf"} ]
