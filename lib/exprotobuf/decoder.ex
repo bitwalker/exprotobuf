@@ -1,8 +1,8 @@
 defmodule Protobuf.Decoder do
   use Bitwise, only_operators: true
+  require Protobuf.Utils, as: Utils
   alias Protobuf.Field
   alias Protobuf.OneOfField
-  alias Protobuf.Utils
 
   # Decode with record/module
   def decode(bytes, module) do
@@ -108,37 +108,37 @@ defmodule Protobuf.Decoder do
       # recursive unwrap repeated
       {k, v}, acc = %_{} when is_list(v) ->
         Map.put(acc, k, Enum.map(v, &(unwrap_scalars(&1, defs))))
-      # unwrap scalars and messages
-      {k, {oneof, v}}, acc = %_{} ->
+      # unwrap messages
+      {k, {oneof, v = %_{}}}, acc = %_{} when is_atom(oneof) ->
         Map.put(acc, k, {oneof, do_unwrap(v, [msg_module, k, oneof], defs)})
-      {k, v}, acc = %_{} ->
+      {k, v = %_{}}, acc = %_{} ->
         Map.put(acc, k, do_unwrap(v, [msg_module, k], defs))
+      # scalars are unwrapped
+      {_, {oneof, v}}, acc = %_{} when is_atom(oneof) and Utils.is_scalar(v) ->
+        acc
+      {_, v}, acc = %_{} when Utils.is_scalar(v) ->
+        acc
     end)
   end
   defp unwrap_scalars(v, %{}), do: v
 
-  defp do_unwrap(v, keys = [_ | _], defs = %{}) do
-    defs
-    |> get_in(keys)
+  defp do_unwrap(v = %_{}, keys = [_ | _], defs = %{}) do
+    %Field{type: {:msg, module}} =
+      defs
+      |> get_in(keys)
+
+    Utils.standard_scalar_wrappers
+    |> MapSet.member?(module |> Module.split |> Stream.take(-3) |> Enum.join("."))
     |> case do
-      %Field{type: scalar} when is_atom(scalar) ->
-        v
-      %Field{type: {:enum, module}} when is_atom(module) ->
-        v
-      %Field{type: {:msg, module}} when is_atom(module) ->
-        Utils.standard_scalar_wrappers
-        |> MapSet.member?(module |> Module.split |> Stream.take(-3) |> Enum.join("."))
-        |> case do
-          true ->
-            %_{value: value} = v
-            value
-          false ->
-            do_unwrap_enum(v, module, defs)
-        end
+      true ->
+        %_{value: value} = v
+        value
+      false ->
+        do_unwrap_enum(v, module, defs)
     end
   end
 
-  defp do_unwrap_enum(v, module, defs = %{}) do
+  defp do_unwrap_enum(v = %_{}, module, defs = %{}) do
     defs
     |> Map.get(module)
     |> Enum.to_list
@@ -152,16 +152,10 @@ defmodule Protobuf.Decoder do
             %_{value: value} = v
             value
           false ->
-            #
-            # TODO : check safety of this recursive call
-            #
             # recursive unwrap nested messages
             unwrap_scalars(v, defs)
         end
       _ ->
-        #
-        # TODO : check safety of this recursive call
-        #
         # recursive unwrap nested messages
         unwrap_scalars(v, defs)
     end

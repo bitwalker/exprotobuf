@@ -1,5 +1,5 @@
 defmodule Protobuf.Encoder do
-  alias Protobuf.Utils
+  require Protobuf.Utils, as: Utils
   alias Protobuf.Field
   alias Protobuf.OneOfField
 
@@ -54,14 +54,14 @@ defmodule Protobuf.Encoder do
       {k, v}, acc = %_{} when is_list(v) ->
         Map.put(acc, k, Enum.map(v, &(wrap_scalars(&1, defs))))
       # recursive wrap message
-      {k, {oneof, v = %_{}}}, acc = %_{} ->
+      {k, {oneof, v = %_{}}}, acc = %_{} when is_atom(oneof) ->
         Map.put(acc, k, {oneof, wrap_scalars(v, defs)})
       {k, v = %_{}}, acc = %_{} ->
         Map.put(acc, k, wrap_scalars(v, defs))
       # plain wrap scalar
-      {k, {oneof, v}}, acc = %_{} ->
+      {k, {oneof, v}}, acc = %_{} when is_atom(oneof) and Utils.is_scalar(v) ->
         Map.put(acc, k, {oneof, do_wrap(v, [msg_module, k, oneof], defs)})
-      {k, v}, acc = %_{} ->
+      {k, v}, acc = %_{} when Utils.is_scalar(v) ->
         Map.put(acc, k, do_wrap(v, [msg_module, k], defs))
     end)
   end

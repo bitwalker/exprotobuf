@@ -17,6 +17,16 @@ defmodule Protobuf.Utils do
   |> Map.keys
   |> MapSet.new
 
+  defmacro is_scalar(v) do
+    quote do
+      (
+        (is_atom(unquote(v)) and (unquote(v) != nil)) or
+        is_number(unquote(v)) or
+        is_binary(unquote(v))
+      )
+    end
+  end
+
   def standard_scalar_wrappers, do: @standard_scalar_wrappers
 
   def define_algebraic_type([ast_item]) do
