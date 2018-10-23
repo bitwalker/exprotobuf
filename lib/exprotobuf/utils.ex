@@ -63,9 +63,9 @@ defmodule Protobuf.Utils do
   defp do_msg_defs(defs) when is_list(defs) do
     defs
     |> Enum.reduce(%{}, fn
-      meta = %Protobuf.Field{name: name}, acc = %{} ->
+      meta = %Field{name: name}, acc = %{} ->
         Map.put(acc, name, meta)
-      %Protobuf.OneOfField{name: name, fields: fields}, acc = %{} ->
+      %OneOfField{name: name, fields: fields}, acc = %{} ->
         Map.put(acc, name, do_msg_defs(fields))
     end)
   end

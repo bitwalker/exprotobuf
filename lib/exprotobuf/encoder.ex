@@ -71,11 +71,11 @@ defmodule Protobuf.Encoder do
     defs
     |> get_in(keys)
     |> case do
-      %Protobuf.Field{type: scalar} when is_atom(scalar) ->
+      %Field{type: scalar} when is_atom(scalar) ->
         v
-      %Protobuf.Field{type: {:enum, module}} when is_atom(module) ->
+      %Field{type: {:enum, module}} when is_atom(module) ->
         v
-      %Protobuf.Field{type: {:msg, module}} when is_atom(module) ->
+      %Field{type: {:msg, module}} when is_atom(module) ->
         Utils.standard_scalar_wrappers
         |> MapSet.member?(module |> Module.split |> Stream.take(-3) |> Enum.join("."))
         |> case do
