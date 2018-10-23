@@ -33,9 +33,7 @@ defmodule Protobuf.Utils do
   end
 
   def is_enum_wrapper(module, enum_module) when is_atom(module) and is_atom(enum_module) do
-    module
-    |> to_string
-    |> Kernel.==("#{enum_module}Value")
+    Atom.to_string(module) == "#{enum_module}Value"
   end
 
   def define_algebraic_type([ast_item]) do
