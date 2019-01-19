@@ -75,7 +75,15 @@ defmodule Protobuf do
     |> namespace_types(ns, inject)
   end
   defp parse(%Config{namespace: ns, inject: inject, from_file: file, use_package_names: use_package_names}, caller) do
-    {paths, import_dirs} = resolve_paths(file, caller)
+    {paths, import_dirs} =
+      file
+      |> case do
+        []      -> raise("got empty list of .proto files")
+        [_ | _] -> ["#{:code.priv_dir :exprotobuf}/google_protobuf.proto" | file]
+        _       -> ["#{:code.priv_dir :exprotobuf}/google_protobuf.proto", file]
+      end
+      |> resolve_paths(caller)
+
     paths
     |> Parser.parse_files!(imports: import_dirs, use_packages: use_package_names)
     |> namespace_types(ns, inject)
