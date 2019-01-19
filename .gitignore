@@ -6,3 +6,4 @@ erl_crash.dump
 /doc
 /docs
 /tmp/
+/bench/snapshots/

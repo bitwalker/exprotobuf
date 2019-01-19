@@ -203,8 +203,8 @@ defmodule ProtobufTest do
         """
     end
 
-    assert {:file, :in_memory} == :code.is_loaded(EnumInfoModProto.Version)
-    assert {:file, :in_memory} == :code.is_loaded(EnumInfoModProto.Msg.MsgType)
+    assert {:file, []} == :code.is_loaded(EnumInfoModProto.Version)
+    assert {:file, []} == :code.is_loaded(EnumInfoModProto.Msg.MsgType)
 
     assert 1 == EnumInfoModProto.Version.value(:V0_1)
     assert 1 == EnumInfoModProto.Msg.MsgType.value(:START)

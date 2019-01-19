@@ -22,6 +22,7 @@ defmodule Protobuf.DefineEnum do
     ]
     if inject do
       quote do
+        unquote(define_typespec(enum_atoms))
         unquote(contents)
         def value(_), do: nil
         def atom(_),  do: nil
@@ -30,6 +31,7 @@ defmodule Protobuf.DefineEnum do
       quote do
         defmodule unquote(name) do
           @moduledoc false
+          unquote(define_typespec(enum_atoms))
           unquote(Protobuf.Config.doc_quote(doc))
           unquote(contents)
           def value(_), do: nil
@@ -39,4 +41,11 @@ defmodule Protobuf.DefineEnum do
     end
   end
 
+  defp define_typespec(enum_atoms) do
+    {:@, [context: Elixir, import: Kernel],
+     [
+       {:type, [context: Elixir],
+        [{:::, [], [{:t, [], Elixir}, Protobuf.Utils.define_algebraic_type(enum_atoms)]}]}
+     ]}
+  end
 end
