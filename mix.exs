@@ -26,16 +26,15 @@ defmodule Protobuf.Mixfile do
   end
 
   defp package do
-    [ organization: "coingaming",
-      files: ["lib", "mix.exs", "README.md", "LICENSE", "priv"],
-      maintainers: ["Paul Schoenfelder", "Ilja Tkachuk aka timCF"],
-      licenses: ["Apache Version 2.0"],
-      links: %{"GitHub": "https://github.com/coingaming/exprotobuf"} ]
+    [files: ["lib", "mix.exs", "README.md", "LICENSE", "priv"],
+     maintainers: ["Paul Schoenfelder", "Ilja Tkachuk aka timCF"],
+     licenses: ["Apache Version 2.0"],
+     links: %{"GitHub": "https://github.com/bitwalker/exprotobuf"} ]
   end
 
   defp deps do
     [
-      {:gpb, "~> 3.24"},
+      {:gpb, "~> 4.0"},
       {:ex_doc, "~> 0.19", only: :dev},
       {:benchfella, "~> 0.3.0", only: [:dev, :test], runtime: false}
     ]
@@ -45,5 +44,4 @@ defmodule Protobuf.Mixfile do
   defp elixirc_paths(:test), do: ["lib", "test/support", "bench/support"]
   defp elixirc_paths(:dev),  do: ["lib", "bench/support"]
   defp elixirc_paths(_),     do: ["lib"]
-
 end

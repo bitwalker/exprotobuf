@@ -13,6 +13,10 @@ defmodule Protobuf.Builder do
         Module.register_attribute __MODULE__, :use_in, accumulate: true
         import unquote(__MODULE__), only: [use_in: 2]
 
+        unless is_nil(unquote(config.from_file)) do
+          @external_resource unquote(config.from_file)
+        end
+
         @config         unquote(Macro.escape Map.to_list(%{config | :schema => nil}))
         @msgs           unquote(Macro.escape msgs)
         contents = unquote(__MODULE__).generate(@msgs, @config)
@@ -22,6 +26,10 @@ defmodule Protobuf.Builder do
       quote do
         Module.register_attribute __MODULE__, :use_in, accumulate: true
         import unquote(__MODULE__), only: [use_in: 2]
+
+        unless is_nil(unquote(config.from_file)) do
+          @external_resource unquote(config.from_file)
+        end
 
         @config         unquote(Macro.escape Map.to_list(%{config | :schema => nil}))
         @msgs           unquote(Macro.escape msgs)

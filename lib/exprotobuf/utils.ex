@@ -28,33 +28,29 @@ defmodule Protobuf.Utils do
   end
 
   def is_standard_scalar_wrapper(module) when is_atom(module) do
-    @standard_scalar_wrappers
-    |> MapSet.member?(module |> Module.split |> Stream.take(-3) |> Enum.join("."))
+    mod =
+      module
+      |> Module.split()
+      |> Stream.take(-3)
+      |> Enum.join(".")
+
+    MapSet.member?(@standard_scalar_wrappers, mod)
   end
 
   def is_enum_wrapper(module, enum_module) when is_atom(module) and is_atom(enum_module) do
     Atom.to_string(module) == "#{enum_module}Value"
   end
 
-  def define_algebraic_type([ast_item]) do
-    ast_item
+  def define_algebraic_type([item]), do: item
+  def define_algebraic_type([lhs, rhs]) do
+    quote do
+      unquote(lhs) | unquote(rhs)
+    end
   end
-  def define_algebraic_type(ast_pair = [_, _]) do
-    {
-      :|,
-      [],
-      ast_pair
-    }
-  end
-  def define_algebraic_type([ast_item | rest_ast_list]) do
-    {
-      :|,
-      [],
-      [
-        ast_item,
-        define_algebraic_type(rest_ast_list)
-      ]
-    }
+  def define_algebraic_type([lhs | rest]) do
+    quote do
+      unquote(lhs) | unquote(define_algebraic_type(rest))
+    end
   end
 
   def convert_to_record(map, module) do
@@ -63,8 +59,8 @@ defmodule Protobuf.Utils do
       value = Map.get(map, key, default)
       [value_transform(module, value) | acc]
     end)
-    |> Enum.reverse
-    |> List.to_tuple
+    |> Enum.reverse()
+    |> List.to_tuple()
   end
 
   def msg_defs(defs) when is_list(defs) do

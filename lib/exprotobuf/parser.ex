@@ -35,7 +35,7 @@ defmodule Protobuf.Parser do
   end
 
   defp parse(defs, options) when is_list(defs) do
-    :gpb_parse.post_process_one_file(defs, options)
+    :gpb_parse.post_process_all_files(defs, options)
   end
   defp parse(string, options) when is_binary(string) do
     case :gpb_scan.string('#{string}') do

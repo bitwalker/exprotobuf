@@ -75,14 +75,7 @@ defmodule Protobuf do
     |> namespace_types(ns, inject)
   end
   defp parse(%Config{namespace: ns, inject: inject, from_file: file, use_package_names: use_package_names}, caller) do
-    {paths, import_dirs} =
-      file
-      |> case do
-        []      -> raise("got empty list of .proto files")
-        [_ | _] -> ["#{:code.priv_dir :exprotobuf}/google_protobuf.proto" | file]
-        _       -> ["#{:code.priv_dir :exprotobuf}/google_protobuf.proto", file]
-      end
-      |> resolve_paths(caller)
+    {paths, import_dirs} = resolve_paths(file, caller)
 
     paths
     |> Parser.parse_files!(imports: import_dirs, use_packages: use_package_names)
@@ -145,10 +138,14 @@ defmodule Protobuf do
   end
 
   defp resolve_paths(quoted_files, caller) do
-    paths = case Code.eval_quoted(quoted_files, [], caller) do
-      {path, _} when is_binary(path) -> [path]
-      {paths, _} when is_list(paths) -> paths
-    end
+    google_proto = Path.join(Application.app_dir(:exprotobuf, "priv"), "google_protobuf.proto")
+    paths = 
+      case Code.eval_quoted(quoted_files, [], caller) do
+        {path, _} when is_binary(path) -> 
+          [google_proto, path]
+        {paths, _} when is_list(paths) -> 
+          [google_proto | paths]
+      end
 
     import_dirs = Enum.map(paths, &Path.dirname/1) |> Enum.uniq
 
