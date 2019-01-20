@@ -6,6 +6,7 @@ defmodule Protobuf.DefineMessage do
   alias Protobuf.Field
   alias Protobuf.OneOfField
   alias Protobuf.Delimited
+  alias Protobuf.Utils
 
   def def_message(name, fields, [inject: inject, doc: doc, syntax: syntax]) when is_list(fields) do
     struct_fields = record_fields(fields)
@@ -19,6 +20,8 @@ defmodule Protobuf.DefineMessage do
 
         def record, do: @record
         def syntax, do: unquote(syntax)
+
+        unquote(define_typespec(name, fields))
 
         unquote(encode_decode(name))
         unquote(fields_methods(fields))
@@ -47,6 +50,8 @@ defmodule Protobuf.DefineMessage do
           def record, do: @record
           def syntax, do: unquote(syntax)
 
+          unquote(define_typespec(name, fields))
+
           unquote(encode_decode(name))
           unquote(fields_methods(fields))
           unquote(oneof_fields_methods(fields))
@@ -62,6 +67,8 @@ defmodule Protobuf.DefineMessage do
             def serialize(object), do: unquote(name).encode(object)
           end
         end
+
+        unquote(define_oneof_modules(name, fields))
       end
     end
   end
@@ -72,6 +79,157 @@ defmodule Protobuf.DefineMessage do
       def new(values) do
         struct(unquote(name), values)
       end
+    end
+  end
+
+  defp define_typespec(module, field_list) when is_list(field_list) do
+    case field_list do
+      [%Field{name: :value, type: scalar, occurrence: occurrence}] when is_atom(scalar) ->
+        scalar_wrapper? = Utils.is_standard_scalar_wrapper(module)
+        cond do
+          scalar_wrapper? and occurrence == :required ->
+            quote do
+              @type t() :: unquote(define_scalar_typespec(scalar))
+            end
+
+          scalar_wrapper? ->
+            quote do
+              @type t() :: unquote(define_scalar_typespec(scalar)) | nil
+            end
+
+          :else ->
+            define_trivial_typespec(field_list)
+        end
+
+      [%Field{name: :value, type: {:enum, enum_module}, occurrence: occurrence}] when is_atom(enum_module) ->
+        enum_wrapper? = Utils.is_enum_wrapper(module, enum_module)
+        cond do
+          enum_wrapper? and occurrence == :required ->
+            quote do
+              @type t() :: unquote(enum_module).t()
+            end
+
+          enum_wrapper? ->
+            quote do
+              @type t() :: unquote(enum_module).t() | nil
+            end
+
+          :else ->
+            define_trivial_typespec(field_list)
+        end
+
+      _ ->
+        define_trivial_typespec(field_list)
+    end
+  end
+
+  defp define_trivial_typespec([]), do: nil
+  defp define_trivial_typespec(fields) when is_list(fields) do
+    field_types = define_trivial_typespec_fields(fields, [])
+    type_map = {:%{}, [], field_types}
+    quote generated: true do
+      @type t() :: unquote(type_map)
+    end
+  end
+  defp define_trivial_typespec_fields([], acc), do: Enum.reverse(acc)
+  defp define_trivial_typespec_fields([%Protobuf.Field{ name: name, occurrence: :required, type: type } | rest], acc) do
+    ast = {name, define_field_typespec(type)}
+    define_trivial_typespec_fields(rest, [ast | acc])
+  end
+  defp define_trivial_typespec_fields([%Protobuf.Field{ name: name, occurrence: :optional, type: type } | rest], acc) do
+    ast = {name, quote do unquote(define_field_typespec(type)) | nil end}
+    define_trivial_typespec_fields(rest, [ast | acc])
+   end
+  defp define_trivial_typespec_fields([%Protobuf.Field{ name: name, occurrence: :repeated, type: type } | rest], acc) do
+    ast = {name, quote do [unquote(define_field_typespec(type))] end}
+    define_trivial_typespec_fields(rest, [ast | acc])
+   end
+  defp define_trivial_typespec_fields([%Protobuf.OneOfField{ name: name, fields: fields } | rest], acc) do
+    ast = {name, quote do unquote(define_algebraic_type(fields)) end}
+    define_trivial_typespec_fields(rest, [ast | acc])
+   end
+  defp define_algebraic_type(fields) do
+    ast =
+      for %Protobuf.Field{name: name, type: type} <- fields do
+        {name, define_field_typespec(type)}
+      end
+    Protobuf.Utils.define_algebraic_type([nil | ast])
+  end
+
+  defp define_oneof_modules(namespace, fields) when is_list(fields) do
+    ast =
+      for %Protobuf.OneOfField{} = field <- fields do
+        define_oneof_instance_module(namespace, field)
+      end
+    quote do
+      unquote_splicing(ast)
+    end
+  end
+
+  defp define_oneof_instance_module(namespace, %Protobuf.OneOfField{name: field, fields: fields}) do
+    module_subname =
+      field
+      |> Atom.to_string()
+      |> Macro.camelize()
+      |> String.to_atom()
+
+    fields = Enum.map(fields, &define_oneof_instance_macro/1)
+    quote do
+      defmodule unquote(Module.concat([namespace, :OneOf, module_subname])) do
+        unquote_splicing(fields)
+      end
+    end
+  end
+
+  defp define_oneof_instance_macro(%Protobuf.Field{name: name}) do
+    quote do
+      defmacro unquote(name)(ast) do
+        inner_name = unquote(name)
+        quote do
+          {unquote(inner_name), unquote(ast)}
+        end
+      end
+    end
+  end
+
+  defp define_field_typespec(type) do
+    case type do
+      {:msg, field_module} ->
+        quote do
+          unquote(field_module).t()
+        end
+      {:enum, field_module} ->
+        quote do
+          unquote(field_module).t()
+        end
+      {:map, key_type, value_type} ->
+        key_type_ast = define_field_typespec(key_type)
+        value_type_ast = define_field_typespec(value_type)
+        quote do
+          [{unquote(key_type_ast), unquote(value_type_ast)}]
+        end
+      _ ->
+        define_scalar_typespec(type)
+    end
+  end
+
+  defp define_scalar_typespec(type) do
+    case type do
+      :double ->  quote do float() end
+      :float -> quote do float() end
+      :int32 -> quote do integer() end
+      :int64 -> quote do integer() end
+      :uint32 -> quote do non_neg_integer() end
+      :uint64 -> quote do non_neg_integer() end
+      :sint32 -> quote do integer() end
+      :sint64 -> quote do integer() end
+      :fixed32 -> quote do non_neg_integer() end
+      :fixed64 -> quote do non_neg_integer() end
+      :sfixed32 -> quote do integer() end
+      :sfixed64 -> quote do integer() end
+      :bool -> quote do boolean() end
+      :string -> quote do String.t() end
+      :bytes -> quote do binary() end
     end
   end
 

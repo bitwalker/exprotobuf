@@ -12,7 +12,7 @@ defmodule Protobuf.Delimited do
       input = [m1, m2, m3]
       output = <<byte_size(encoded_m1), encoded_m1, byte_size(encoded_m2), encoded_m2, ..>>
   """
-  @spec encode([Map.t]) :: binary
+  @spec encode([map]) :: binary
   def encode(messages) do
     messages
     |> Enum.map(&encode_message/1)
@@ -30,7 +30,7 @@ defmodule Protobuf.Delimited do
   in the input binary. If an error occurs, an error tuple will be
   returned.
   """
-  @spec decode(binary, atom) :: [Map.t] | {:error, term}
+  @spec decode(binary, atom) :: [map] | {:error, term}
   def decode(bytes, module) do
     do_decode(bytes, module, [])
   end
