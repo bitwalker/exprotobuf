@@ -5,6 +5,27 @@ defmodule Protobuf.Oneof.Test do
     use Protobuf, from: Path.expand("../proto/one_of.proto", __DIR__)
   end
 
+  test "oneof macro in dynamic expression" do
+    require Msgs.SampleOneofMsg.OneOf.Foo, as: Foo
+    assert {:body, "HELLO"} == Foo.body("hello" |> String.upcase)
+    assert {:code, 0} == Foo.code(1 - 1)
+  end
+
+  test "oneof macro in pattern matching" do
+    require Msgs.SampleOneofMsg, as: Msg
+    require Msgs.SampleOneofMsg.OneOf.Foo, as: Foo
+    %Msg{
+      one: "hello",
+      foo: Foo.body("world" |> String.upcase)
+    }
+    |> Msg.encode
+    |> Msg.decode
+    |> case do
+      %Msg{one: "hello", foo: Foo.body("WORLD")} -> assert true
+      %Msg{} -> assert false
+    end
+  end
+
   test "can create one_of protos" do
     msg = Msgs.SampleOneofMsg.new(one: "test", foo: {:body, "xxx"})
     assert %{one: "test", foo: {:body, "xxx"}} = msg

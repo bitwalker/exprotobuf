@@ -1,8 +1,8 @@
 defmodule Protobuf.Decoder do
   use Bitwise, only_operators: true
+  require Protobuf.Utils, as: Utils
   alias Protobuf.Field
   alias Protobuf.OneOfField
-  alias Protobuf.Utils
 
   # Decode with record/module
   def decode(bytes, module) do
@@ -22,6 +22,7 @@ defmodule Protobuf.Decoder do
     :gpb.decode_msg(bytes, module, defs)
     |> Utils.convert_from_record(module)
     |> convert_fields
+    |> unwrap_scalars(module.defs |> Utils.msg_defs)
   end
 
   def varint(bytes) do
@@ -46,7 +47,7 @@ defmodule Protobuf.Decoder do
   end
   defp get_default(:proto3, field, module) do
     case module.defs(:field, field) do
-      %Protobuf.OneOfField{} -> nil
+      %OneOfField{} -> nil
       x ->
         case x.type do
           :string ->
@@ -96,4 +97,67 @@ defmodule Protobuf.Decoder do
     do: {convert_value(key_type, key), convert_value(value_type, value)}
   defp convert_value(_, value),
     do: value
+
+  defp unwrap_scalars(%msg_module{} = msg, %{} = defs) do
+    msg
+    |> Map.from_struct
+    |> Enum.reduce(msg, fn
+      # nil is unwrapped
+      {_, nil}, acc = %_{} ->
+        acc
+      # recursive unwrap repeated
+      {k, v}, acc = %_{} when is_list(v) ->
+        Map.put(acc, k, Enum.map(v, &(unwrap_scalars(&1, defs))))
+      # unwrap messages
+      {k, {oneof, v = %_{}}}, acc = %_{} when is_atom(oneof) ->
+        Map.put(acc, k, {oneof, do_unwrap(v, [msg_module, k, oneof], defs)})
+      {k, v = %_{}}, acc = %_{} ->
+        Map.put(acc, k, do_unwrap(v, [msg_module, k], defs))
+      # scalars are unwrapped
+      {_, {oneof, v}}, acc = %_{} when is_atom(oneof) and Utils.is_scalar(v) ->
+        acc
+      {_, v}, acc = %_{} when Utils.is_scalar(v) ->
+        acc
+    end)
+  end
+  defp unwrap_scalars(v, %{}), do: v
+
+  defp do_unwrap(v = %_{}, keys = [_ | _], defs = %{}) do
+    %Field{type: {:msg, module}} =
+      defs
+      |> get_in(keys)
+
+    module
+    |> Utils.is_standard_scalar_wrapper
+    |> case do
+      true ->
+        %_{value: value} = v
+        value
+      false ->
+        do_unwrap_enum(v, module, defs)
+    end
+  end
+
+  defp do_unwrap_enum(v = %_{}, module, defs = %{}) do
+    defs
+    |> Map.get(module)
+    |> Enum.to_list
+    |> case do
+      [value: %Field{type: {:enum, enum_module}}] ->
+        module
+        |> Utils.is_enum_wrapper(enum_module)
+        |> case do
+          true ->
+            %_{value: value} = v
+            value
+          false ->
+            # recursive unwrap nested messages
+            unwrap_scalars(v, defs)
+        end
+      _ ->
+        # recursive unwrap nested messages
+        unwrap_scalars(v, defs)
+    end
+  end
+
 end
