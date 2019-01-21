@@ -36,12 +36,7 @@ defmodule Protobuf do
           %Config{namespace: namespace, schema: schema, only: parse_only(only, __CALLER__)}
 
         %{inject: true} ->
-          only =
-            namespace
-            |> Module.split()
-            |> Enum.join(".")
-            |> String.to_atom()
-
+          only = last_module(namespace)
           %Config{namespace: namespace, schema: schema, only: [only], inject: true}
       end
 
@@ -98,14 +93,9 @@ defmodule Protobuf do
           }
 
         %{from: file, inject: true} ->
-          only =
-            namespace
-            |> Module.split()
-            |> Enum.join(".")
-            |> String.to_atom()
-
+          only = last_module(namespace)
           %Config{
-            namespace: namespace, 
+            namespace: namespace,  
             only: [only], 
             inject: true, 
             from_file: file, 
@@ -169,7 +159,8 @@ defmodule Protobuf do
       parsed_type = if :gpb.is_msg_proto3(name, parsed), do: :proto3_msg, else: type
 
       if inject do
-        {{parsed_type, :"#{normalize_name(name)}"}, namespace_fields(type, fields, ns)}
+        ns_init = drop_last_module(ns)
+        {{parsed_type, :"#{ns_init}.#{name |> normalize_name}"}, namespace_fields(type, fields, ns)}
       else
         {{parsed_type, :"#{ns}.#{normalize_name(name)}"}, namespace_fields(type, fields, ns)}
       end
@@ -258,5 +249,22 @@ defmodule Protobuf do
       |> Enum.uniq()
 
     {paths, import_dirs}
+  end
+
+  # Returns the last module of a namespace
+  defp last_module(namespace) do
+    namespace 
+    |> Module.split() 
+    |> List.last() 
+    |> String.to_atom()
+  end
+
+  defp drop_last_module(namespace) do
+    namespace
+    |> Atom.to_string()
+    |> String.split(".")
+    |> Enum.drop(-1)
+    |> Enum.join(".")
+    |> String.to_atom()
   end
 end

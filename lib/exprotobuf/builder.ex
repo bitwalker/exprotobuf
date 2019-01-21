@@ -83,11 +83,13 @@ defmodule Protobuf.Builder do
           item_type in [:msg, :proto3_msg, :enum],
           into: [] do
         if only != [] do
-          is_child? =
-            only
-            |> Enum.any?(fn o -> o != item_name and is_child_type?(item_name, o) end)
-
-          if item_name in only or is_child? do
+          is_child? = 
+            Enum.any?(only, fn o -> 
+              o != item_name and is_child_type?(item_name, o)
+            end)
+          
+          last_mod = last_module(item_name)
+          if last_mod in only or is_child? do
             case item_type do
               :msg when is_child? ->
                 item_name = fix_ns(item_name, ns)
@@ -185,5 +187,9 @@ defmodule Protobuf.Builder do
       |> String.to_atom()
 
     :"#{ns}.#{module}"
+  end
+
+  defp last_module(namespace) do
+    namespace |> Module.split() |> List.last() |> String.to_atom()
   end
 end
