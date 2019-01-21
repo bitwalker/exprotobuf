@@ -21,9 +21,8 @@ defmodule Protobuf.Config do
             use_package_names: false,
             doc: nil
 
-
   def doc_quote(false) do
-    quote do: @moduledoc unquote(false)
+    quote do: @moduledoc(unquote(false))
   end
 
   def doc_quote(_), do: nil

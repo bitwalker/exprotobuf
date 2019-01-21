@@ -8,7 +8,7 @@ defmodule Protobuf.DefineMessage do
   alias Protobuf.Delimited
   alias Protobuf.Utils
 
-  def def_message(name, fields, [inject: inject, doc: doc, syntax: syntax]) when is_list(fields) do
+  def def_message(name, fields, inject: inject, doc: doc, syntax: syntax) when is_list(fields) do
     struct_fields = record_fields(fields)
     # Inject everything in 'using' module
     if inject do
@@ -33,10 +33,11 @@ defmodule Protobuf.DefineMessage do
           def serialize(object), do: unquote(name).encode(object)
         end
       end
-    # Or create a nested module, with use_in functionality
+
+      # Or create a nested module, with use_in functionality
     else
       quote location: :keep do
-        root   = __MODULE__
+        root = __MODULE__
         fields = unquote(struct_fields)
         use_in = @use_in[unquote(name)]
 
@@ -76,6 +77,7 @@ defmodule Protobuf.DefineMessage do
   defp constructors(name) do
     quote location: :keep do
       def new(), do: new([])
+
       def new(values) do
         struct(unquote(name), values)
       end
@@ -84,8 +86,10 @@ defmodule Protobuf.DefineMessage do
 
   defp define_typespec(module, field_list) when is_list(field_list) when is_atom(module) do
     case field_list do
-      [%Field{name: :value, type: scalar, occurrence: occurrence}] when is_atom(scalar) and is_atom(occurrence) ->
+      [%Field{name: :value, type: scalar, occurrence: occurrence}]
+      when is_atom(scalar) and is_atom(occurrence) ->
         scalar_wrapper? = Utils.is_standard_scalar_wrapper(module)
+
         cond do
           scalar_wrapper? and occurrence == :required ->
             quote do
@@ -101,8 +105,10 @@ defmodule Protobuf.DefineMessage do
             define_trivial_typespec(field_list)
         end
 
-      [%Field{name: :value, type: {:enum, enum_module}, occurrence: occurrence}] when is_atom(enum_module) ->
+      [%Field{name: :value, type: {:enum, enum_module}, occurrence: occurrence}]
+      when is_atom(enum_module) ->
         enum_wrapper? = Utils.is_enum_wrapper(module, enum_module)
+
         cond do
           enum_wrapper? and occurrence == :required ->
             quote do
@@ -124,35 +130,59 @@ defmodule Protobuf.DefineMessage do
   end
 
   defp define_trivial_typespec([]), do: nil
+
   defp define_trivial_typespec(fields) when is_list(fields) do
     field_types = define_trivial_typespec_fields(fields, [])
     type_map = {:%{}, [], field_types}
+
     quote generated: true do
       @type t() :: unquote(type_map)
     end
   end
+
   defp define_trivial_typespec_fields([], acc), do: Enum.reverse(acc)
-  defp define_trivial_typespec_fields([%Protobuf.Field{ name: name, occurrence: :required, type: type } | rest], acc) do
-    ast = {name, define_field_typespec(type)}
-    define_trivial_typespec_fields(rest, [ast | acc])
+
+  defp define_trivial_typespec_fields([field | rest], acc) do
+    case field do
+      %Protobuf.Field{name: name, occurrence: :required, type: type} ->
+        ast = {name, define_field_typespec(type)}
+        define_trivial_typespec_fields(rest, [ast | acc])
+
+      %Protobuf.Field{name: name, occurrence: :optional, type: type} ->
+        ast =
+          {name,
+           quote do
+             unquote(define_field_typespec(type)) | nil
+           end}
+
+        define_trivial_typespec_fields(rest, [ast | acc])
+
+      %Protobuf.Field{name: name, occurrence: :repeated, type: type} ->
+        ast =
+          {name,
+           quote do
+             [unquote(define_field_typespec(type))]
+           end}
+
+        define_trivial_typespec_fields(rest, [ast | acc])
+
+      %Protobuf.OneOfField{name: name, fields: fields} ->
+        ast =
+          {name,
+           quote do
+             unquote(define_algebraic_type(fields))
+           end}
+
+        define_trivial_typespec_fields(rest, [ast | acc])
+    end
   end
-  defp define_trivial_typespec_fields([%Protobuf.Field{ name: name, occurrence: :optional, type: type } | rest], acc) do
-    ast = {name, quote do unquote(define_field_typespec(type)) | nil end}
-    define_trivial_typespec_fields(rest, [ast | acc])
-   end
-  defp define_trivial_typespec_fields([%Protobuf.Field{ name: name, occurrence: :repeated, type: type } | rest], acc) do
-    ast = {name, quote do [unquote(define_field_typespec(type))] end}
-    define_trivial_typespec_fields(rest, [ast | acc])
-   end
-  defp define_trivial_typespec_fields([%Protobuf.OneOfField{ name: name, fields: fields } | rest], acc) do
-    ast = {name, quote do unquote(define_algebraic_type(fields)) end}
-    define_trivial_typespec_fields(rest, [ast | acc])
-   end
+
   defp define_algebraic_type(fields) do
     ast =
       for %Protobuf.Field{name: name, type: type} <- fields do
         {name, define_field_typespec(type)}
       end
+
     Protobuf.Utils.define_algebraic_type([nil | ast])
   end
 
@@ -161,8 +191,9 @@ defmodule Protobuf.DefineMessage do
       for %Protobuf.OneOfField{} = field <- fields do
         define_oneof_instance_module(namespace, field)
       end
+
     quote do
-      unquote_splicing(ast)
+      (unquote_splicing(ast))
     end
   end
 
@@ -174,9 +205,10 @@ defmodule Protobuf.DefineMessage do
       |> String.to_atom()
 
     fields = Enum.map(fields, &define_oneof_instance_macro/1)
+
     quote do
       defmodule unquote(Module.concat([namespace, :OneOf, module_subname])) do
-        unquote_splicing(fields)
+        (unquote_splicing(fields))
       end
     end
   end
@@ -185,6 +217,7 @@ defmodule Protobuf.DefineMessage do
     quote do
       defmacro unquote(name)(ast) do
         inner_name = unquote(name)
+
         quote do
           {unquote(inner_name), unquote(ast)}
         end
@@ -198,16 +231,20 @@ defmodule Protobuf.DefineMessage do
         quote do
           unquote(field_module).t()
         end
+
       {:enum, field_module} ->
         quote do
           unquote(field_module).t()
         end
+
       {:map, key_type, value_type} ->
         key_type_ast = define_field_typespec(key_type)
         value_type_ast = define_field_typespec(value_type)
+
         quote do
           [{unquote(key_type_ast), unquote(value_type_ast)}]
         end
+
       _ ->
         define_scalar_typespec(type)
     end
@@ -215,29 +252,88 @@ defmodule Protobuf.DefineMessage do
 
   defp define_scalar_typespec(type) do
     case type do
-      :double ->  quote do float() end
-      :float -> quote do float() end
-      :int32 -> quote do integer() end
-      :int64 -> quote do integer() end
-      :uint32 -> quote do non_neg_integer() end
-      :uint64 -> quote do non_neg_integer() end
-      :sint32 -> quote do integer() end
-      :sint64 -> quote do integer() end
-      :fixed32 -> quote do non_neg_integer() end
-      :fixed64 -> quote do non_neg_integer() end
-      :sfixed32 -> quote do integer() end
-      :sfixed64 -> quote do integer() end
-      :bool -> quote do boolean() end
-      :string -> quote do String.t() end
-      :bytes -> quote do binary() end
+      :double ->
+        quote do
+          float()
+        end
+
+      :float ->
+        quote do
+          float()
+        end
+
+      :int32 ->
+        quote do
+          integer()
+        end
+
+      :int64 ->
+        quote do
+          integer()
+        end
+
+      :uint32 ->
+        quote do
+          non_neg_integer()
+        end
+
+      :uint64 ->
+        quote do
+          non_neg_integer()
+        end
+
+      :sint32 ->
+        quote do
+          integer()
+        end
+
+      :sint64 ->
+        quote do
+          integer()
+        end
+
+      :fixed32 ->
+        quote do
+          non_neg_integer()
+        end
+
+      :fixed64 ->
+        quote do
+          non_neg_integer()
+        end
+
+      :sfixed32 ->
+        quote do
+          integer()
+        end
+
+      :sfixed64 ->
+        quote do
+          integer()
+        end
+
+      :bool ->
+        quote do
+          boolean()
+        end
+
+      :string ->
+        quote do
+          String.t()
+        end
+
+      :bytes ->
+        quote do
+          binary()
+        end
     end
   end
 
   defp encode_decode(_name) do
     quote do
-      def decode(data),         do: Decoder.decode(data, __MODULE__)
+      def decode(data), do: Decoder.decode(data, __MODULE__)
       def encode(%{} = record), do: Encoder.encode(record, defs())
-      def decode_delimited(bytes),    do: Delimited.decode(bytes, __MODULE__)
+      def decode_delimited(bytes), do: Delimited.decode(bytes, __MODULE__)
       def encode_delimited(messages), do: Delimited.encode(messages)
     end
   end
@@ -262,29 +358,33 @@ defmodule Protobuf.DefineMessage do
 
   defp meta_information do
     quote do
-      def defs,                   do: @root.defs
-      def defs(:field, _),        do: nil
+      def defs, do: @root.defs
+      def defs(:field, _), do: nil
       def defs(:field, field, _), do: defs(:field, field)
-      defoverridable [defs: 0]
+      defoverridable defs: 0
     end
   end
 
   defp record_fields(fields) do
     fields
-    |> Enum.map(fn(field) ->
+    |> Enum.map(fn field ->
       case field do
         %Field{name: name, occurrence: :repeated} ->
           {name, []}
+
         %Field{name: name, opts: [default: default]} ->
           {name, default}
+
         %Field{name: name} ->
           {name, nil}
+
         %OneOfField{name: name} ->
           {name, nil}
+
         _ ->
           nil
       end
     end)
-    |> Enum.reject(fn(field) -> is_nil(field) end)
+    |> Enum.reject(&is_nil/1)
   end
 end

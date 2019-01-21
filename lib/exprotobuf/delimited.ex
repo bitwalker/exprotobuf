@@ -16,7 +16,7 @@ defmodule Protobuf.Delimited do
   def encode(messages) do
     messages
     |> Enum.map(&encode_message/1)
-    |> Enum.join
+    |> Enum.join()
   end
 
   @doc """
@@ -34,13 +34,20 @@ defmodule Protobuf.Delimited do
   def decode(bytes, module) do
     do_decode(bytes, module, [])
   end
-  defp do_decode(<<num_bytes::size(32), message_bytes::bytes-size(num_bytes), rest::binary>>, module, acc) do
+
+  defp do_decode(
+         <<num_bytes::size(32), message_bytes::bytes-size(num_bytes), rest::binary>>,
+         module,
+         acc
+       ) do
     decoded_message = module.decode(message_bytes)
     do_decode(rest, module, [decoded_message | acc])
   end
+
   defp do_decode(<<>>, _module, acc) do
     Enum.reverse(acc)
   end
+
   defp do_decode(rest, _module, _acc) do
     {:error, {:delimited_err, {:invalid_binary, rest}}}
   end

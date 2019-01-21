@@ -1,5 +1,4 @@
 defmodule Protobuf.Parser do
-
   defmodule ParserError do
     defexception [:message]
   end
@@ -7,9 +6,9 @@ defmodule Protobuf.Parser do
   def parse_files!(files, options \\ []) do
     files
     |> Enum.flat_map(fn path ->
-        schema = File.read!(path)
-        parse!(path, schema, options)
-      end)
+      schema = File.read!(path)
+      parse!(path, schema, options)
+    end)
     |> finalize!(options)
   end
 
@@ -21,19 +20,30 @@ defmodule Protobuf.Parser do
 
   defp finalize!(defs, options) do
     case :gpb_parse.post_process_all_files(defs, options) do
-      {:ok, defs} -> 
+      {:ok, defs} ->
         defs
+
       {:error, error} ->
-        msg = 
+        msg =
           case error do
             [ref_to_undefined_msg_or_enum: {{root_path, field}, type}] ->
-              type_ref    = Enum.map(type, &Atom.to_string/1) |> Enum.join
-              invalid_ref = Enum.reverse([field|root_path]) |> Enum.map(&Atom.to_string/1) |> Enum.join
+              type_ref =
+                type
+                |> Enum.map(&Atom.to_string/1)
+                |> Enum.join()
+
+              invalid_ref =
+                [field | root_path]
+                |> Enum.reverse()
+                |> Enum.map(&Atom.to_string/1)
+                |> Enum.join()
+
               "Reference to undefined message or enum #{type_ref} at #{invalid_ref}"
 
             _ ->
               Macro.to_string(error)
           end
+
         raise ParserError, message: msg
     end
   end
@@ -41,9 +51,13 @@ defmodule Protobuf.Parser do
   defp parse(path, string, options) when is_binary(string) or is_list(string) do
     case :gpb_scan.string('#{string}') do
       {:ok, tokens, _} ->
-        lines = String.split(string, "\n", parts: :infinity) |> Enum.count
-        case :gpb_parse.parse(tokens ++ [{:'$end', lines + 1}]) do
-          {:ok, defs} -> 
+        lines =
+          string
+          |> String.split("\n", parts: :infinity)
+          |> Enum.count()
+
+        case :gpb_parse.parse(tokens ++ [{:"$end", lines + 1}]) do
+          {:ok, defs} ->
             :gpb_parse.post_process_one_file(path, defs, options)
 
           error ->
@@ -57,15 +71,24 @@ defmodule Protobuf.Parser do
 
   defp parse!(path, string, options) do
     case parse(path, string, options) do
-      {:ok, defs} -> 
+      {:ok, defs} ->
         defs
 
       {:error, error} ->
-        msg = 
+        msg =
           case error do
             [ref_to_undefined_msg_or_enum: {{root_path, field}, type}] ->
-              type_ref    = Enum.map(type, &Atom.to_string/1) |> Enum.join
-              invalid_ref = Enum.reverse([field|root_path]) |> Enum.map(&Atom.to_string/1) |> Enum.join
+              type_ref =
+                type
+                |> Enum.map(&Atom.to_string/1)
+                |> Enum.join()
+
+              invalid_ref =
+                [field | root_path]
+                |> Enum.reverse()
+                |> Enum.map(&Atom.to_string/1)
+                |> Enum.join()
+
               "Reference to undefined message or enum #{type_ref} at #{invalid_ref}"
 
             _ when is_binary(error) ->
@@ -74,6 +97,7 @@ defmodule Protobuf.Parser do
             _ ->
               Macro.to_string(error)
           end
+
         raise ParserError, message: msg
     end
   end

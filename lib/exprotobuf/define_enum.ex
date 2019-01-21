@@ -5,27 +5,33 @@ defmodule Protobuf.DefineEnum do
   Defines a new module which contains two functions, atom(value) and value(atom), for
   getting either the name or value of an enumeration value.
   """
-  def def_enum(name, values, [inject: inject, doc: doc]) do
-    enum_atoms = Enum.map values, fn {a, _} -> a end
-    enum_values = Enum.map values, fn {_, v} -> v end
-    contents = for {atom, value} <- values do
-      quote do
-        def value(unquote(atom)), do: unquote(value)
-        def atom(unquote(value)), do: unquote(atom)
+  def def_enum(name, values, inject: inject, doc: doc) do
+    enum_atoms = Enum.map(values, fn {a, _} -> a end)
+    enum_values = Enum.map(values, fn {_, v} -> v end)
+
+    contents =
+      for {atom, value} <- values do
+        quote do
+          def value(unquote(atom)), do: unquote(value)
+          def atom(unquote(value)), do: unquote(atom)
+        end
       end
-    end
-    contents = contents ++ [
-      quote do
-        def values, do: unquote(enum_values)
-        def atoms, do: unquote(enum_atoms)
-      end
-    ]
+
+    contents =
+      contents ++
+        [
+          quote do
+            def values, do: unquote(enum_values)
+            def atoms, do: unquote(enum_atoms)
+          end
+        ]
+
     if inject do
       quote do
         unquote(define_typespec(enum_atoms))
         unquote(contents)
         def value(_), do: nil
-        def atom(_),  do: nil
+        def atom(_), do: nil
       end
     else
       quote do
@@ -42,10 +48,8 @@ defmodule Protobuf.DefineEnum do
   end
 
   defp define_typespec(enum_atoms) do
-    {:@, [context: Elixir, import: Kernel],
-     [
-       {:type, [context: Elixir],
-        [{:::, [], [{:t, [], Elixir}, Protobuf.Utils.define_algebraic_type(enum_atoms)]}]}
-     ]}
+    quote do
+      @type t() :: unquote(Protobuf.Utils.define_algebraic_type(enum_atoms))
+    end
   end
 end

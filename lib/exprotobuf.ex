@@ -9,29 +9,50 @@ defmodule Protobuf do
 
   defmacro __using__(schema) when is_binary(schema) do
     config = %Config{namespace: __CALLER__.module, schema: schema}
-    config |> parse(__CALLER__) |> Builder.define(config)
+
+    config
+    |> parse(__CALLER__)
+    |> Builder.define(config)
   end
+
   defmacro __using__([schema | opts]) when is_binary(schema) do
     namespace = __CALLER__.module
+
     config =
       case Enum.into(opts, %{}) do
         %{only: only, inject: true} ->
           types = parse_only(only, __CALLER__)
+
           case types do
-            []       -> raise ConfigError, error: "You must specify a type using :only when combined with inject: true"
-            [_type]  -> %Config{namespace: namespace, schema: schema, only: types, inject: true}
+            [] ->
+              raise ConfigError,
+                error: "You must specify a type using :only when combined with inject: true"
+
+            [_type] ->
+              %Config{namespace: namespace, schema: schema, only: types, inject: true}
           end
+
         %{only: only} ->
           %Config{namespace: namespace, schema: schema, only: parse_only(only, __CALLER__)}
+
         %{inject: true} ->
-          only = namespace |> Module.split |> Enum.join(".") |> String.to_atom
+          only =
+            namespace
+            |> Module.split()
+            |> Enum.join(".")
+            |> String.to_atom()
+
           %Config{namespace: namespace, schema: schema, only: [only], inject: true}
       end
-    config |> parse(__CALLER__) |> Builder.define(config)
+
+    config
+    |> parse(__CALLER__)
+    |> Builder.define(config)
   end
+
   defmacro __using__(opts) when is_list(opts) do
     namespace = Keyword.get(opts, :namespace, __CALLER__.module)
-    doc  = Keyword.get(opts, :doc, nil)
+    doc = Keyword.get(opts, :doc, nil)
     opts = Keyword.delete(opts, :doc)
     opts = Keyword.delete(opts, :namespace)
     opts = Enum.into(opts, %{})
@@ -39,32 +60,59 @@ defmodule Protobuf do
     config =
       case opts do
         %{from: file, use_package_names: use_package_names} ->
-          %Config{namespace: namespace, from_file: file, use_package_names: use_package_names, doc: doc}
+          %Config{
+            namespace: namespace,
+            from_file: file,
+            use_package_names: use_package_names,
+            doc: doc
+          }
+
         %{from: file, only: only, inject: true} ->
           types = parse_only(only, __CALLER__)
+
           case types do
-            []       -> raise ConfigError, error: "You must specify a type using :only when combined with inject: true"
-            [_type]  -> %Config{namespace: namespace, only: types, inject: true, from_file: file, doc: doc}
+            [] ->
+              raise ConfigError,
+                error: "You must specify a type using :only when combined with inject: true"
+
+            [_type] ->
+              %Config{namespace: namespace, only: types, inject: true, from_file: file, doc: doc}
           end
+
         %{from: file, only: only} ->
-          %Config{namespace: namespace, only: parse_only(only, __CALLER__), from_file: file, doc: doc}
+          %Config{
+            namespace: namespace,
+            only: parse_only(only, __CALLER__),
+            from_file: file,
+            doc: doc
+          }
+
         %{from: file, inject: true} ->
-          only = namespace |> Module.split |> Enum.join(".") |> String.to_atom
-          %Config{namespace: namespace,  only: [only], inject: true, from_file: file, doc: doc}
+          only =
+            namespace
+            |> Module.split()
+            |> Enum.join(".")
+            |> String.to_atom()
+
+          %Config{namespace: namespace, only: [only], inject: true, from_file: file, doc: doc}
+
         %{from: file} ->
           %Config{namespace: namespace, from_file: file, doc: doc}
       end
 
-    config |> parse(__CALLER__) |> Builder.define(config)
+    config
+    |> parse(__CALLER__)
+    |> Builder.define(config)
   end
 
   # Read the type or list of types to extract from the schema
   defp parse_only(only, caller) do
     {types, []} = Code.eval_quoted(only, [], caller)
+
     case types do
       types when is_list(types) -> types
-      types when types == nil   -> []
-      _                         -> [types]
+      types when types == nil -> []
+      _ -> [types]
     end
   end
 
@@ -76,11 +124,21 @@ defmodule Protobuf do
       else
         ns
       end
+
     mod_name
     |> Parser.parse_string!(schema)
     |> namespace_types(ns, inject)
   end
-  defp parse(%Config{namespace: ns, inject: inject, from_file: file, use_package_names: use_package_names}, caller) do
+
+  defp parse(
+         %Config{
+           namespace: ns,
+           inject: inject,
+           from_file: file,
+           use_package_names: use_package_names
+         },
+         caller
+       ) do
     {paths, import_dirs} = resolve_paths(file, caller)
 
     paths
@@ -102,31 +160,47 @@ defmodule Protobuf do
   end
 
   # Apply namespace to nested types
-  defp namespace_fields(:msg, fields, ns),        do: Enum.map(fields, &namespace_fields(&1, ns))
+  defp namespace_fields(:msg, fields, ns), do: Enum.map(fields, &namespace_fields(&1, ns))
   defp namespace_fields(:proto3_msg, fields, ns), do: Enum.map(fields, &namespace_fields(&1, ns))
-  defp namespace_fields(_, fields, _),            do: fields
+  defp namespace_fields(_, fields, _), do: fields
+
   defp namespace_fields(field, ns) when not is_map(field) do
     case elem(field, 0) do
-      :gpb_oneof -> field |> Utils.convert_from_record(OneOfField) |> namespace_fields(ns)
-      _          -> field |> Utils.convert_from_record(Field) |> namespace_fields(ns)
+      :gpb_oneof ->
+        field
+        |> Utils.convert_from_record(OneOfField)
+        |> namespace_fields(ns)
+
+      _ ->
+        field
+        |> Utils.convert_from_record(Field)
+        |> namespace_fields(ns)
     end
   end
+
   defp namespace_fields(%Field{type: {:map, key_type, value_type}} = field, ns) do
-    %{field | :type => {:map, key_type |> namespace_map_type(ns), value_type |> namespace_map_type(ns)}}
+    key_type = namespace_map_type(key_type, ns)
+    value_type = namespace_map_type(value_type, ns)
+    %{field | type: {:map, key_type, value_type}}
   end
+
   defp namespace_fields(%Field{type: {type, name}} = field, ns) do
     %{field | :type => {type, :"#{ns}.#{normalize_name(name)}"}}
   end
+
   defp namespace_fields(%Field{} = field, _ns) do
     field
   end
+
   defp namespace_fields(%OneOfField{} = field, ns) do
-    field |> Map.put(:fields, Enum.map(field.fields, &namespace_fields(&1, ns)))
+    fields = Enum.map(field.fields, &namespace_fields(&1, ns))
+    Map.put(field, :fields, fields)
   end
 
   defp namespace_map_type({:msg, name}, ns) do
     {:msg, :"#{ns}.#{normalize_name(name)}"}
   end
+
   defp namespace_map_type(type, _ns) do
     type
   end
@@ -135,25 +209,30 @@ defmodule Protobuf do
   # (respects camel-case and nested modules)
   defp normalize_name(name) do
     name
-    |> Atom.to_string
+    |> Atom.to_string()
     |> String.split(".", parts: :infinity)
-    |> Enum.map(fn(x) -> String.split_at(x, 1) end)
-    |> Enum.map(fn({first, remainder}) -> String.upcase(first) <> remainder end)
+    |> Enum.map(fn x -> String.split_at(x, 1) end)
+    |> Enum.map(fn {first, remainder} -> String.upcase(first) <> remainder end)
     |> Enum.join(".")
-    |> String.to_atom
+    |> String.to_atom()
   end
 
   defp resolve_paths(quoted_files, caller) do
     google_proto = Path.join(Application.app_dir(:exprotobuf, "priv"), "google_protobuf.proto")
-    paths = 
+
+    paths =
       case Code.eval_quoted(quoted_files, [], caller) do
-        {path, _} when is_binary(path) -> 
+        {path, _} when is_binary(path) ->
           [google_proto, path]
-        {paths, _} when is_list(paths) -> 
+
+        {paths, _} when is_list(paths) ->
           [google_proto | paths]
       end
 
-    import_dirs = Enum.map(paths, &Path.dirname/1) |> Enum.uniq
+    import_dirs =
+      paths
+      |> Enum.map(&Path.dirname/1)
+      |> Enum.uniq()
 
     {paths, import_dirs}
   end

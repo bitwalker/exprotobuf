@@ -10,12 +10,16 @@ defmodule Protobuf.Decoder do
       for {{type, mod}, fields} <- module.defs, into: [] do
         case type do
           :msg ->
-            {{:msg, mod}, Enum.map(fields, fn field ->
-              case field do
-                %Field{}      -> Utils.convert_to_record(field, Field)
-                %OneOfField{} -> Utils.convert_to_record(field, OneOfField)
-              end
-            end)}
+            {{:msg, mod},
+             Enum.map(fields, fn field ->
+               case field do
+                 %Field{} ->
+                   Utils.convert_to_record(field, Field)
+
+                 %OneOfField{} ->
+                   Utils.convert_to_record(field, OneOfField)
+               end
+             end)}
 
           type when type in [:enum, :extensions, :service, :group] ->
             {{type, mod}, fields}
@@ -41,18 +45,21 @@ defmodule Protobuf.Decoder do
       |> Enum.reduce(msg, fn
         field, msg ->
           value = Map.get(msg, field)
+
           if value == :undefined do
             Map.put(msg, field, get_default(module.syntax(), field, module))
           else
             convert_field(value, msg, module.defs(:field, field))
           end
       end)
+
     struct(module, converted)
   end
 
   defp get_default(:proto2, field, module) do
     Map.get(struct(module), field)
   end
+
   defp get_default(:proto3, field, module) do
     case module.defs(:field, field) do
       %OneOfField{} ->
@@ -81,7 +88,7 @@ defmodule Protobuf.Decoder do
         value = for v <- value, do: convert_value(type, v)
         Map.put(msg, field, value)
 
-      {_, :string}   ->
+      {_, :string} ->
         Map.put(msg, field, convert_value(type, value))
 
       {_, {:msg, _}} ->
@@ -96,10 +103,12 @@ defmodule Protobuf.Decoder do
     cond do
       is_tuple(inner_value) ->
         module = elem(inner_value, 0)
+
         converted_value =
           inner_value
           |> Utils.convert_from_record(module)
           |> convert_fields()
+
         Map.put(msg, field, {key, converted_value})
 
       is_list(inner_value) ->
@@ -112,10 +121,16 @@ defmodule Protobuf.Decoder do
 
   defp convert_value(:string, value),
     do: :unicode.characters_to_binary(value)
-  defp convert_value({:msg, _}, value),
-    do: value |> Utils.convert_from_record(elem(value, 0)) |> convert_fields()
+
+  defp convert_value({:msg, _}, value) do
+    value
+    |> Utils.convert_from_record(elem(value, 0))
+    |> convert_fields()
+  end
+
   defp convert_value({:map, key_type, value_type}, {key, value}),
     do: {convert_value(key_type, key), convert_value(value_type, value)}
+
   defp convert_value(_, value),
     do: value
 
@@ -124,28 +139,29 @@ defmodule Protobuf.Decoder do
     |> Map.from_struct()
     |> Enum.reduce(msg, fn
       # nil is unwrapped
-      {_, nil}, acc = %_{} ->
+      {_, nil}, acc ->
         acc
 
       # recursive unwrap repeated
-      {k, v}, acc = %_{} when is_list(v) ->
-        Map.put(acc, k, Enum.map(v, &(unwrap_scalars(&1, defs))))
+      {k, v}, acc when is_list(v) ->
+        Map.put(acc, k, Enum.map(v, &unwrap_scalars(&1, defs)))
 
       # unwrap messages
-      {k, {oneof, v = %_{}}}, acc = %_{} when is_atom(oneof) ->
+      {k, {oneof, %_{} = v}}, acc when is_atom(oneof) ->
         Map.put(acc, k, {oneof, do_unwrap(v, [msg_module, k, oneof], defs)})
 
-      {k, v = %_{}}, acc = %_{} ->
+      {k, %_{} = v}, acc ->
         Map.put(acc, k, do_unwrap(v, [msg_module, k], defs))
 
       # scalars are unwrapped
-      {_, {oneof, v}}, acc = %_{} when is_atom(oneof) and Utils.is_scalar(v) ->
+      {_, {oneof, v}}, acc when is_atom(oneof) and Utils.is_scalar(v) ->
         acc
 
-      {_, v}, acc = %_{} when Utils.is_scalar(v) ->
+      {_, v}, acc when Utils.is_scalar(v) ->
         acc
     end)
   end
+
   defp unwrap_scalars(v, %{}), do: v
 
   defp do_unwrap(v = %_{}, keys = [_ | _], defs = %{}) do
