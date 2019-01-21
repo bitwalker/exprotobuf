@@ -134,7 +134,7 @@ defmodule Protobuf.DefineMessage do
         {:%{}, [], field_types}
       ]
     }
-    quote generated: true do
+    quote do
       @type t() :: unquote(type_struct)
     end
   end
