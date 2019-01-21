@@ -82,9 +82,9 @@ defmodule Protobuf.DefineMessage do
     end
   end
 
-  defp define_typespec(module, field_list) when is_list(field_list) do
+  defp define_typespec(module, field_list) when is_list(field_list) when is_atom(module) do
     case field_list do
-      [%Field{name: :value, type: scalar, occurrence: occurrence}] when is_atom(scalar) ->
+      [%Field{name: :value, type: scalar, occurrence: occurrence}] when is_atom(scalar) and is_atom(occurrence) ->
         scalar_wrapper? = Utils.is_standard_scalar_wrapper(module)
         cond do
           scalar_wrapper? and occurrence == :required ->

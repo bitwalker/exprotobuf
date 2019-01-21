@@ -14,8 +14,6 @@ defmodule Protobuf.Utils do
     "Google.Protobuf.StringValue" => true,
     "Google.Protobuf.BytesValue" => true,
   }
-  |> Map.keys
-  |> MapSet.new
 
   defmacro is_scalar(v) do
     quote do
@@ -31,10 +29,10 @@ defmodule Protobuf.Utils do
     mod =
       module
       |> Module.split()
-      |> Stream.take(-3)
+      |> Enum.take(-3)
       |> Enum.join(".")
 
-    MapSet.member?(@standard_scalar_wrappers, mod)
+    Map.has_key?(@standard_scalar_wrappers, mod)
   end
 
   def is_enum_wrapper(module, enum_module) when is_atom(module) and is_atom(enum_module) do
