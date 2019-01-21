@@ -45,16 +45,17 @@ defmodule Protobuf do
           %Config{namespace: namespace, schema: schema, only: [only], inject: true}
       end
 
-    config
+    use_google_types = get_in(opts, [:use_google_types]) || false
+
+    %Config{config | use_google_types: use_google_types}
     |> parse(__CALLER__)
     |> Builder.define(config)
   end
 
   defmacro __using__(opts) when is_list(opts) do
-    namespace = Keyword.get(opts, :namespace, __CALLER__.module)
-    doc = Keyword.get(opts, :doc, nil)
-    opts = Keyword.delete(opts, :doc)
-    opts = Keyword.delete(opts, :namespace)
+    {namespace, opts} = Keyword.pop(opts, :namespace, __CALLER__.module)
+    {doc, opts} = Keyword.pop(opts, :doc, nil)
+    {use_google_types, opts} = Keyword.pop(opts, :use_google_types, false)
     opts = Enum.into(opts, %{})
 
     config =
@@ -63,8 +64,9 @@ defmodule Protobuf do
           %Config{
             namespace: namespace,
             from_file: file,
+            doc: doc,
             use_package_names: use_package_names,
-            doc: doc
+            use_google_types: use_google_types,
           }
 
         %{from: file, only: only, inject: true} ->
@@ -76,7 +78,14 @@ defmodule Protobuf do
                 error: "You must specify a type using :only when combined with inject: true"
 
             [_type] ->
-              %Config{namespace: namespace, only: types, inject: true, from_file: file, doc: doc}
+              %Config{
+                namespace: namespace, 
+                only: types, 
+                inject: true, 
+                from_file: file, 
+                doc: doc,
+                use_google_types: use_google_types,
+              }
           end
 
         %{from: file, only: only} ->
@@ -84,7 +93,8 @@ defmodule Protobuf do
             namespace: namespace,
             only: parse_only(only, __CALLER__),
             from_file: file,
-            doc: doc
+            doc: doc,
+            use_google_types: use_google_types,
           }
 
         %{from: file, inject: true} ->
@@ -94,10 +104,22 @@ defmodule Protobuf do
             |> Enum.join(".")
             |> String.to_atom()
 
-          %Config{namespace: namespace, only: [only], inject: true, from_file: file, doc: doc}
+          %Config{
+            namespace: namespace, 
+            only: [only], 
+            inject: true, 
+            from_file: file, 
+            doc: doc,
+            use_google_types: use_google_types,
+          }
 
         %{from: file} ->
-          %Config{namespace: namespace, from_file: file, doc: doc}
+          %Config{
+            namespace: namespace, 
+            from_file: file, 
+            doc: doc,
+            use_google_types: use_google_types,
+          }
       end
 
     config
@@ -117,7 +139,8 @@ defmodule Protobuf do
   end
 
   # Parse and fix namespaces of parsed types
-  defp parse(%Config{namespace: ns, schema: schema, inject: inject, from_file: nil}, caller) do
+  defp parse(%Config{schema: schema, inject: inject, from_file: nil} = config, caller) do
+    ns = config.namespace
     mod_name =
       if inject do
         caller.module
@@ -130,16 +153,10 @@ defmodule Protobuf do
     |> namespace_types(ns, inject)
   end
 
-  defp parse(
-         %Config{
-           namespace: ns,
-           inject: inject,
-           from_file: file,
-           use_package_names: use_package_names
-         },
-         caller
-       ) do
-    {paths, import_dirs} = resolve_paths(file, caller)
+  defp parse(%Config{inject: inject, from_file: file} = config, caller) do
+    ns = config.namespace
+    use_package_names = config.use_package_names
+    {paths, import_dirs} = resolve_paths(config, file, caller)
 
     paths
     |> Parser.parse_files!(imports: import_dirs, use_packages: use_package_names)
@@ -217,16 +234,22 @@ defmodule Protobuf do
     |> String.to_atom()
   end
 
-  defp resolve_paths(quoted_files, caller) do
+  defp resolve_paths(%Config{use_google_types: google_types?}, quoted_files, caller) do
     google_proto = Path.join(Application.app_dir(:exprotobuf, "priv"), "google_protobuf.proto")
 
     paths =
       case Code.eval_quoted(quoted_files, [], caller) do
-        {path, _} when is_binary(path) ->
+        {path, _} when is_binary(path) and google_types? ->
           [google_proto, path]
 
-        {paths, _} when is_list(paths) ->
+        {path, _} when is_binary(path) ->
+          [path]
+
+        {paths, _} when is_list(paths) and google_types? ->
           [google_proto | paths]
+
+        {paths, _} when is_list(paths) ->
+          paths
       end
 
     import_dirs =

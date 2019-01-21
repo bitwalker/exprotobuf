@@ -134,7 +134,7 @@ defmodule Protobuf.DefineMessage do
   defp define_trivial_typespec(fields) when is_list(fields) do
     field_types = define_trivial_typespec_fields(fields, [])
     map_type = {:%{}, [], field_types}
-    module_type = {:%, [], {{:__MODULE__, [], Elixir}, map_type}
+    module_type = {:%, [], {{:__MODULE__, [], Elixir}, map_type}}
 
     quote generated: true do
       @type t() :: unquote(module_type)

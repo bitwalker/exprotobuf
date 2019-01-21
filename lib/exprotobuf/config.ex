@@ -6,12 +6,16 @@ defmodule Protobuf.Config do
   @moduledoc """
   Defines a struct used for configuring the parser behavior.
 
-  defstruct namespace: nil, # The root module which will define the namespace of generated modules
-            schema: "",     # The schema as a string, either provided direct, or read from file
-            only: [],       # The list of types to load, if empty, all are loaded
-            inject: false   # Flag which determines whether the types loaded are injected in the 'using' module.
-                            # `inject: true` requires only with a single type defined, since no more than one struct
-                            # can be defined per-module.
+  ## Options
+
+  * `namespace`: The root module which will define the namespace of generated modules
+  * `schema`: The schema as a string or a path to a file
+  * `only`: The list of types to load. If empty, all are loaded.
+  * `inject`: Flag which when set, determines whether the types loaded are injected into
+    the current module. If set, then the source proto must only define a single type.
+  * `use_google_types`: Determines whether or not to include `Google.Protobuf` scalar wrappers,
+    which can be found in `<exprotobuf>/priv/google_protobuf.proto` for more details.
+
   """
   defstruct namespace: nil,
             schema: "",
@@ -19,6 +23,7 @@ defmodule Protobuf.Config do
             inject: false,
             from_file: nil,
             use_package_names: false,
+            use_google_types: false,
             doc: nil
 
   def doc_quote(false) do
