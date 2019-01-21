@@ -13,7 +13,7 @@ defmodule GpbCompileHelper do
   end
 
   def compile_tmp_proto(msgs, options, module, func) do
-    defs = Protobuf.Parser.parse_string!(msgs, options)
+    defs = Protobuf.Parser.parse_string!("nofile", msgs, options)
 
     options = [:binary | options]
 

@@ -82,154 +82,120 @@ defmodule Protobuf.DefineMessage do
     end
   end
 
-  defp define_typespec(module, field_list) do
+  defp define_typespec(module, field_list) when is_list(field_list) do
+    case field_list do
+      [%Field{name: :value, type: scalar, occurrence: occurrence}] when is_atom(scalar) ->
+        scalar_wrapper? = Utils.is_standard_scalar_wrapper(module)
+        cond do
+          scalar_wrapper? and occurrence == :required ->
+            quote do
+              @type t() :: unquote(define_scalar_typespec(scalar))
+            end
 
-    typespec_ast =
-      field_list
-      |> case do
-        [%Field{name: :value, type: scalar, occurrence: occurrence}] when is_atom(scalar) ->
-          module
-          |> Utils.is_standard_scalar_wrapper
-          |> case do
-            true when (occurrence == :required) ->
-              quote do
-                @type t() :: unquote(define_scalar_typespec(scalar))
-              end
-            true when (occurrence == :optional) ->
-              quote do
-                @type t() :: unquote(define_scalar_typespec(scalar)) | nil
-              end
-            false ->
-              define_trivial_typespec(field_list)
-          end
-        [%Field{name: :value, type: {:enum, enum_module}, occurrence: occurrence}] when is_atom(enum_module) ->
-          module
-          |> Utils.is_enum_wrapper(enum_module)
-          |> case do
-            true when (occurrence == :required) ->
-              quote do
-                @type t() :: unquote(enum_module).t()
-              end
-            true when (occurrence == :optional) ->
-              quote do
-                @type t() :: unquote(enum_module).t() | nil
-              end
-            false ->
-              define_trivial_typespec(field_list)
-          end
-        _ ->
-          define_trivial_typespec(field_list)
-      end
+          scalar_wrapper? and occurrence == :optional ->
+            quote do
+              @type t() :: unquote(define_scalar_typespec(scalar)) | nil
+            end
 
-    # IO.puts(module)
-    #
-    # typespec_ast
-    # |> Macro.to_string
-    # |> IO.puts
-    #
-    # IO.puts("")
+          not(scalar_wrapper?) ->
+            define_trivial_typespec(field_list)
+        end
 
-    typespec_ast
-  end
+      [%Field{name: :value, type: {:enum, enum_module}, occurrence: occurrence}] when is_atom(enum_module) ->
+        enum_wrapper? = Utils.is_enum_wrapper(module, enum_module)
+        cond do
+          enum_wrapper? and occurrence == :required ->
+            quote do
+              @type t() :: unquote(enum_module).t()
+            end
 
-  defp define_trivial_typespec(field_list) do
-    field_specs_ast =
-      field_list
-      |> Enum.map(fn
+          enum_wrapper? and occurrence == :optional ->
+            quote do
+              @type t() :: unquote(enum_module).t() | nil
+            end
 
-        %Protobuf.Field{
-          name: field_name,
-          occurrence: :required,
-          type: type,
-        } ->
-          {field_name, define_field_typespec(type)}
+          not(enum_wrapper?) ->
+            define_trivial_typespec(field_list)
+        end
 
-        %Protobuf.Field{
-          name: field_name,
-          occurrence: :optional,
-          type: type,
-        } ->
-          {field_name, quote do unquote(define_field_typespec(type)) | nil end}
-
-        %Protobuf.Field{
-          name: field_name,
-          occurrence: :repeated,
-          type: type,
-        } ->
-          {field_name, quote do [unquote(define_field_typespec(type))] end}
-
-        %Protobuf.OneOfField{
-          name: field_name,
-          fields: one_of_fields,
-        } ->
-          {
-            field_name,
-            one_of_fields
-            |> Enum.map(fn(%Protobuf.Field{name: name, type: type}) ->
-              quote do
-                {unquote(name), unquote(define_field_typespec(type))}
-              end
-            end)
-            |> Enum.concat([nil])
-            |> Protobuf.Utils.define_algebraic_type
-          }
-      end)
-
-    {:@, [context: Elixir, import: Kernel],
-     [
-       {:type, [context: Elixir],
-        [
-          {:::, [],
-           [
-             {:t, [], Elixir},
-             {:%, [],
-              [
-                {:__MODULE__, [], Elixir},
-                {:%{}, [], field_specs_ast}
-              ]}
-           ]}
-        ]}
-     ]}
-  end
-
-  defp define_oneof_modules(namespace, field_list) do
-    field_list
-    |> Enum.filter(fn
-      %Protobuf.OneOfField{} -> true
-      %_{} -> false
-    end)
-    |> Enum.reduce(quote do end, &(define_oneof_instance_module(namespace, &1, &2)))
-  end
-
-  defp define_oneof_instance_module(namespace,
-                                    %Protobuf.OneOfField{
-                                      name: field_name,
-                                      fields: one_of_fields
-                                    },
-                                    ast_acc) do
-    module_subname =
-      field_name
-      |> Atom.to_string
-      |> Macro.camelize
-      |> String.to_atom
-
-    quote do
-      defmodule unquote([namespace, :OneOf, module_subname] |> Module.concat) do
-        unquote(Enum.reduce(one_of_fields, quote do end, &define_oneof_instance_macro/2))
-      end
-      unquote(ast_acc)
+      _ ->
+        define_trivial_typespec(field_list)
     end
   end
 
-  defp define_oneof_instance_macro(%Protobuf.Field{name: name}, ast_acc) do
+  # defp define_trivial_typespec([]), do: nil
+  defp define_trivial_typespec(fields) when is_list(fields) do
+    field_types = define_trivial_typespec_fields(fields, [])
+    type_struct = {
+      :%,
+      [],
+      [
+        {:__MODULE__, [], Elixir},
+        {:%{}, [], field_types}
+      ]
+    }
+    quote generated: true do
+      @type t() :: unquote(type_struct)
+    end
+  end
+  defp define_trivial_typespec_fields([], acc), do: Enum.reverse(acc)
+  defp define_trivial_typespec_fields([%Protobuf.Field{ name: name, occurrence: :required, type: type } | rest], acc) do
+    ast = {name, define_field_typespec(type)}
+    define_trivial_typespec_fields(rest, [ast | acc])
+  end
+  defp define_trivial_typespec_fields([%Protobuf.Field{ name: name, occurrence: :optional, type: type } | rest], acc) do
+    ast = {name, quote do unquote(define_field_typespec(type)) | nil end}
+    define_trivial_typespec_fields(rest, [ast | acc])
+   end
+  defp define_trivial_typespec_fields([%Protobuf.Field{ name: name, occurrence: :repeated, type: type } | rest], acc) do
+    ast = {name, quote do [unquote(define_field_typespec(type))] end}
+    define_trivial_typespec_fields(rest, [ast | acc])
+   end
+  defp define_trivial_typespec_fields([%Protobuf.OneOfField{ name: name, fields: fields } | rest], acc) do
+    ast = {name, quote do unquote(define_algebraic_type(fields)) end}
+    define_trivial_typespec_fields(rest, [ast | acc])
+   end
+  defp define_algebraic_type(fields) do
+    ast =
+      for %Protobuf.Field{name: name, type: type} <- fields do
+        {name, define_field_typespec(type)}
+      end
+    Protobuf.Utils.define_algebraic_type([nil | ast])
+  end
+
+  defp define_oneof_modules(namespace, fields) when is_list(fields) do
+    ast =
+      for %Protobuf.OneOfField{} = field <- fields do
+        define_oneof_instance_module(namespace, field)
+      end
     quote do
-      defmacro unquote(name)(expression_ast) do
+      unquote_splicing(ast)
+    end
+  end
+
+  defp define_oneof_instance_module(namespace, %Protobuf.OneOfField{name: field, fields: fields}) do
+    module_subname =
+      field
+      |> Atom.to_string()
+      |> Macro.camelize()
+      |> String.to_atom()
+
+    fields = Enum.map(fields, &define_oneof_instance_macro/1)
+    quote do
+      defmodule unquote(Module.concat([namespace, :OneOf, module_subname])) do
+        unquote_splicing(fields)
+      end
+    end
+  end
+
+  defp define_oneof_instance_macro(%Protobuf.Field{name: name}) do
+    quote do
+      defmacro unquote(name)(ast) do
         inner_name = unquote(name)
         quote do
-          {unquote(inner_name), unquote(expression_ast)}
+          {unquote(inner_name), unquote(ast)}
         end
       end
-      unquote(ast_acc)
     end
   end
 
@@ -295,8 +261,8 @@ defmodule Protobuf.DefineMessage do
   defp oneof_fields_methods(fields) do
     for %OneOfField{name: name, rnum: rnum} = field <- fields do
       quote location: :keep do
-        def defs(:field, unquote(rnum)), do: unquote(Macro.escape(field))
-        def defs(:field, unquote(name)), do: defs(:field, unquote(rnum))
+        def defs(:field, unquote(rnum - 1)), do: unquote(Macro.escape(field))
+        def defs(:field, unquote(name)), do: defs(:field, unquote(rnum - 1))
       end
     end
   end

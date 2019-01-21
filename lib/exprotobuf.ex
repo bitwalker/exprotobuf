@@ -69,20 +69,19 @@ defmodule Protobuf do
   end
 
   # Parse and fix namespaces of parsed types
-  defp parse(%Config{namespace: ns, schema: schema, inject: inject, from_file: nil}, _) do
-    schema
-    |> Parser.parse_string!
+  defp parse(%Config{namespace: ns, schema: schema, inject: inject, from_file: nil}, caller) do
+    mod_name =
+      if inject do
+        caller.module
+      else
+        ns
+      end
+    mod_name
+    |> Parser.parse_string!(schema)
     |> namespace_types(ns, inject)
   end
   defp parse(%Config{namespace: ns, inject: inject, from_file: file, use_package_names: use_package_names}, caller) do
-    {paths, import_dirs} =
-      file
-      |> case do
-        []      -> raise("got empty list of .proto files")
-        [_ | _] -> ["#{:code.priv_dir :exprotobuf}/google_protobuf.proto" | file]
-        _       -> ["#{:code.priv_dir :exprotobuf}/google_protobuf.proto", file]
-      end
-      |> resolve_paths(caller)
+    {paths, import_dirs} = resolve_paths(file, caller)
 
     paths
     |> Parser.parse_files!(imports: import_dirs, use_packages: use_package_names)
@@ -91,13 +90,13 @@ defmodule Protobuf do
 
   # Apply namespace to top-level types
   defp namespace_types(parsed, ns, inject) do
-    for {{type, name}, fields} <- parsed do
+    for {{type, name}, fields} <- parsed, is_atom(name) do
       parsed_type = if :gpb.is_msg_proto3(name, parsed), do: :proto3_msg, else: type
 
       if inject do
-        {{parsed_type, :"#{name |> normalize_name}"}, namespace_fields(type, fields, ns)}
+        {{parsed_type, :"#{normalize_name(name)}"}, namespace_fields(type, fields, ns)}
       else
-        {{parsed_type, :"#{ns}.#{name |> normalize_name}"}, namespace_fields(type, fields, ns)}
+        {{parsed_type, :"#{ns}.#{normalize_name(name)}"}, namespace_fields(type, fields, ns)}
       end
     end
   end
@@ -116,7 +115,7 @@ defmodule Protobuf do
     %{field | :type => {:map, key_type |> namespace_map_type(ns), value_type |> namespace_map_type(ns)}}
   end
   defp namespace_fields(%Field{type: {type, name}} = field, ns) do
-    %{field | :type => {type, :"#{ns}.#{name |> normalize_name}"}}
+    %{field | :type => {type, :"#{ns}.#{normalize_name(name)}"}}
   end
   defp namespace_fields(%Field{} = field, _ns) do
     field
@@ -126,7 +125,7 @@ defmodule Protobuf do
   end
 
   defp namespace_map_type({:msg, name}, ns) do
-    {:msg, :"#{ns}.#{name |> normalize_name}"}
+    {:msg, :"#{ns}.#{normalize_name(name)}"}
   end
   defp namespace_map_type(type, _ns) do
     type
@@ -145,10 +144,14 @@ defmodule Protobuf do
   end
 
   defp resolve_paths(quoted_files, caller) do
-    paths = case Code.eval_quoted(quoted_files, [], caller) do
-      {path, _} when is_binary(path) -> [path]
-      {paths, _} when is_list(paths) -> paths
-    end
+    google_proto = Path.join(Application.app_dir(:exprotobuf, "priv"), "google_protobuf.proto")
+    paths =
+      case Code.eval_quoted(quoted_files, [], caller) do
+        {path, _} when is_binary(path) ->
+          [google_proto, path]
+        {paths, _} when is_list(paths) ->
+          [google_proto | paths]
+      end
 
     import_dirs = Enum.map(paths, &Path.dirname/1) |> Enum.uniq
 

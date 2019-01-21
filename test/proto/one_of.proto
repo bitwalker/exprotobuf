@@ -6,8 +6,8 @@ message SampleOneofMsg {
   optional string one = 1;
 
   oneof foo {
-    string body = 3;
-    uint32 code = 4;
+      string body = 2;
+      uint32 code = 3;
   }
 }
 
@@ -15,16 +15,31 @@ message AdvancedOneofMsg {
   optional SubMsg one = 1;
 
   oneof foo {
-    SubMsg body = 3;
-    uint32 code = 4;
+    SubMsg body = 2;
+    uint32 code = 3;
   }
 }
 
 message ReversedOrderOneOfMsg {
-	oneof foo {
-		string body = 1;
-		uint32 code = 2;
-	}
+  oneof foo {
+    string body = 1;
+    uint32 code = 2;
+  }
 
-	optional string bar = 3;
+  optional string bar = 3;
+}
+
+message SurroundOneOfMsg {
+  oneof foo {
+    string body = 1;
+    uint32 code = 2;
+    uint32 third = 3;
+  }
+
+  optional string bar = 4;
+
+  oneof buzz {
+     string one = 5;
+     uint32 two = 6;
+  }
 }

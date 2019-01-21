@@ -6,12 +6,20 @@ defmodule Protobuf.Mixfile do
      version: "1.2.16",
      elixir: "~> 1.7",
      elixirc_paths: elixirc_paths(Mix.env),
+     preferred_cli_env: [
+       bench: :bench,
+     ],
      description: description(),
      package: package(),
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
      consolidate_protocols: Mix.env == :prod,
-     deps: deps()]
+     deps: deps(),
+     dialyzer: [
+       plt_add_deps: :transitive,
+       ignore_warnings: ".dialyzer.ignore-warnings"
+     ]
+    ]
   end
 
   def application do
@@ -26,24 +34,24 @@ defmodule Protobuf.Mixfile do
   end
 
   defp package do
-    [ organization: "coingaming",
-      files: ["lib", "mix.exs", "README.md", "LICENSE", "priv"],
-      maintainers: ["Paul Schoenfelder", "Ilja Tkachuk aka timCF"],
-      licenses: ["Apache Version 2.0"],
-      links: %{"GitHub": "https://github.com/coingaming/exprotobuf"} ]
+    [files: ["lib", "mix.exs", "README.md", "LICENSE", "priv"],
+     maintainers: ["Paul Schoenfelder"],
+     licenses: ["Apache Version 2.0"],
+     links: %{"GitHub": "https://github.com/bitwalker/exprotobuf"} ]
   end
 
   defp deps do
     [
-      {:gpb, "~> 3.24"},
+      {:gpb, "~> 4.0"},
       {:ex_doc, "~> 0.19", only: :dev},
+      {:dialyxir, "~> 0.5", only: :dev},
       {:benchfella, "~> 0.3.0", only: [:dev, :test], runtime: false}
     ]
   end
 
   # Specifies which paths to compile per environment.
-  defp elixirc_paths(:test), do: ["lib", "test/support", "bench/support"]
-  defp elixirc_paths(:dev),  do: ["lib", "bench/support"]
-  defp elixirc_paths(_),     do: ["lib"]
-
+  defp elixirc_paths(:test), do: ["lib", "test/support"]
+  defp elixirc_paths(:bench), do: ["lib", "bench/support"]
+  defp elixirc_paths(:dev), do: ["lib"]
+  defp elixirc_paths(_), do: ["lib"]
 end

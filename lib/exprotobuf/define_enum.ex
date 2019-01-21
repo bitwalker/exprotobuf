@@ -42,21 +42,10 @@ defmodule Protobuf.DefineEnum do
   end
 
   defp define_typespec(enum_atoms) do
-
-    typespec_ast =
-      {:@, [context: Elixir, import: Kernel],
-       [
-         {:type, [context: Elixir],
-          [{:::, [], [{:t, [], Elixir}, Protobuf.Utils.define_algebraic_type(enum_atoms)]}]}
-       ]}
-
-    # typespec_ast
-    # |> Macro.to_string
-    # |> IO.puts
-    #
-    # IO.puts("")
-
-    typespec_ast
+    {:@, [context: Elixir, import: Kernel],
+     [
+       {:type, [context: Elixir],
+        [{:::, [], [{:t, [], Elixir}, Protobuf.Utils.define_algebraic_type(enum_atoms)]}]}
+     ]}
   end
-
 end

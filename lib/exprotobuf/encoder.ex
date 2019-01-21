@@ -6,19 +6,21 @@ defmodule Protobuf.Encoder do
   def encode(%{} = msg, defs) do
     fixed_defs = for {{type, mod}, fields} <- defs, into: [] do
       case type do
-        :msg  -> {{:msg, mod}, Enum.map(fields, fn field ->
-          case field do
-            %OneOfField{} -> field |> Utils.convert_to_record(OneOfField)
-            %Field{} -> field |> Utils.convert_to_record(Field)
-          end
-        end)}
+        :msg  ->
+          {{:msg, mod}, Enum.map(fields, fn field ->
+            case field do
+              %OneOfField{} -> field |> Utils.convert_to_record(OneOfField)
+              %Field{} -> field |> Utils.convert_to_record(Field)
+            end
+          end)}
+
         type when type in [:enum, :extensions, :service, :group] ->
           {{type, mod}, fields}
       end
     end
 
     msg
-    |> wrap_scalars(defs |> Utils.msg_defs)
+    |> wrap_scalars(Utils.msg_defs(defs))
     |> fix_undefined
     |> Utils.convert_to_record(msg.__struct__)
     |> :gpb.encode_msg(fixed_defs)
@@ -68,31 +70,22 @@ defmodule Protobuf.Encoder do
   defp wrap_scalars(v, %{}), do: v
 
   defp do_wrap(v, keys = [_ | _], defs = %{}) do
-    defs
-    |> get_in(keys)
-    |> case do
+    case get_in(defs, keys) do
       %Field{type: scalar} when is_atom(scalar) ->
         v
       %Field{type: {:enum, module}} when is_atom(module) ->
         v
       %Field{type: {:msg, module}} when is_atom(module) ->
-        module
-        |> Utils.is_standard_scalar_wrapper
-        |> case do
-          true ->
-            module.new
-            |> Map.put(:value, v)
-          false ->
-            do_wrap_enum(v, module, defs)
+        if Utils.is_standard_scalar_wrapper(module) do
+          Map.put(module.new, :value, v)
+        else
+          do_wrap_enum(v, module, defs)
         end
     end
   end
 
   defp do_wrap_enum(v, module, defs = %{}) do
-    defs
-    |> Map.get(module)
-    |> Enum.to_list
-    |> case do
+    case Enum.to_list(Map.get(defs, module)) do
       [value: %Field{type: {:enum, enum_module}}] ->
         module
         |> Utils.is_enum_wrapper(enum_module)
@@ -107,5 +100,4 @@ defmodule Protobuf.Encoder do
         v
     end
   end
-
 end
