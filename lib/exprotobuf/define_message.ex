@@ -123,7 +123,6 @@ defmodule Protobuf.DefineMessage do
     end
   end
 
-  # defp define_trivial_typespec([]), do: nil
   defp define_trivial_typespec(fields) when is_list(fields) do
     field_types = define_trivial_typespec_fields(fields, [])
     type_struct = {

@@ -31,6 +31,7 @@ defmodule Protobuf do
   end
   defmacro __using__(opts) when is_list(opts) do
     namespace = Keyword.get(opts, :namespace, __CALLER__.module)
+    google_wrappers = Keyword.get(opts, :google_wrappers, false)
     doc  = Keyword.get(opts, :doc, nil)
     opts = Keyword.delete(opts, :doc)
     opts = Keyword.delete(opts, :namespace)
@@ -39,20 +40,20 @@ defmodule Protobuf do
     config =
       case opts do
         %{from: file, use_package_names: use_package_names} ->
-          %Config{namespace: namespace, from_file: file, use_package_names: use_package_names, doc: doc}
+          %Config{namespace: namespace, from_file: file, use_package_names: use_package_names, doc: doc, google_wrappers: google_wrappers}
         %{from: file, only: only, inject: true} ->
           types = parse_only(only, __CALLER__)
           case types do
             []       -> raise ConfigError, error: "You must specify a type using :only when combined with inject: true"
-            [_type]  -> %Config{namespace: namespace, only: types, inject: true, from_file: file, doc: doc}
+            [_type]  -> %Config{namespace: namespace, only: types, inject: true, from_file: file, doc: doc, google_wrappers: google_wrappers}
           end
         %{from: file, only: only} ->
-          %Config{namespace: namespace, only: parse_only(only, __CALLER__), from_file: file, doc: doc}
+          %Config{namespace: namespace, only: parse_only(only, __CALLER__), from_file: file, doc: doc, google_wrappers: google_wrappers}
         %{from: file, inject: true} ->
           only = namespace |> Module.split |> Enum.join(".") |> String.to_atom
-          %Config{namespace: namespace,  only: [only], inject: true, from_file: file, doc: doc}
+          %Config{namespace: namespace,  only: [only], inject: true, from_file: file, doc: doc, google_wrappers: google_wrappers}
         %{from: file} ->
-          %Config{namespace: namespace, from_file: file, doc: doc}
+          %Config{namespace: namespace, from_file: file, doc: doc, google_wrappers: google_wrappers}
       end
 
     config |> parse(__CALLER__) |> Builder.define(config)
@@ -80,8 +81,8 @@ defmodule Protobuf do
     |> Parser.parse_string!(schema)
     |> namespace_types(ns, inject)
   end
-  defp parse(%Config{namespace: ns, inject: inject, from_file: file, use_package_names: use_package_names}, caller) do
-    {paths, import_dirs} = resolve_paths(file, caller)
+  defp parse(%Config{namespace: ns, inject: inject, from_file: file, use_package_names: use_package_names, google_wrappers: google_wrappers}, caller) do
+    {paths, import_dirs} = resolve_paths(file, google_wrappers, caller)
 
     paths
     |> Parser.parse_files!(imports: import_dirs, use_packages: use_package_names)
@@ -143,14 +144,21 @@ defmodule Protobuf do
     |> String.to_atom
   end
 
-  defp resolve_paths(quoted_files, caller) do
+  defp resolve_paths(quoted_files, google_wrappers, caller) do
     google_proto = Path.join(Application.app_dir(:exprotobuf, "priv"), "google_protobuf.proto")
-    paths =
+    parsed_paths =
       case Code.eval_quoted(quoted_files, [], caller) do
         {path, _} when is_binary(path) ->
-          [google_proto, path]
+          [path]
         {paths, _} when is_list(paths) ->
-          [google_proto | paths]
+          paths
+      end
+
+    paths =
+      if google_wrappers do
+        [google_proto | parsed_paths]
+      else
+        parsed_paths
       end
 
     import_dirs = Enum.map(paths, &Path.dirname/1) |> Enum.uniq
