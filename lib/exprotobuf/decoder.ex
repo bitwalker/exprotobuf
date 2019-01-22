@@ -38,22 +38,18 @@ defmodule Protobuf.Decoder do
   end
 
   defp convert_fields(%module{} = msg) do
-    converted =
-      msg
-      |> Map.from_struct()
-      |> Map.keys()
-      |> Enum.reduce(msg, fn
-        field, msg ->
-          value = Map.get(msg, field)
+    msg
+    |> Map.from_struct()
+    |> Map.keys()
+    |> Enum.reduce(msg, fn field, msg ->
+        value = Map.get(msg, field)
 
-          if value == :undefined do
-            Map.put(msg, field, get_default(module.syntax(), field, module))
-          else
-            convert_field(value, msg, module.defs(:field, field))
-          end
-      end)
-
-    struct(module, converted)
+        if value == :undefined do
+          Map.put(msg, field, get_default(module.syntax(), field, module))
+        else
+          convert_field(value, msg, module.defs(:field, field))
+        end
+    end)
   end
 
   defp get_default(:proto2, field, module) do
@@ -85,7 +81,10 @@ defmodule Protobuf.Decoder do
   defp convert_field(value, msg, %Field{name: field, type: type, occurrence: occurrence}) do
     case {occurrence, type} do
       {:repeated, _} ->
-        value = for v <- value, do: convert_value(type, v)
+        value =
+          for v <- value do
+            convert_value(type, v)
+          end
         Map.put(msg, field, value)
 
       {_, :string} ->
@@ -128,8 +127,9 @@ defmodule Protobuf.Decoder do
     |> convert_fields()
   end
 
-  defp convert_value({:map, key_type, value_type}, {key, value}),
-    do: {convert_value(key_type, key), convert_value(value_type, value)}
+  defp convert_value({:map, key_type, value_type}, {key, value}) do
+    {convert_value(key_type, key), convert_value(value_type, value)}
+  end
 
   defp convert_value(_, value),
     do: value
@@ -139,25 +139,25 @@ defmodule Protobuf.Decoder do
     |> Map.from_struct()
     |> Enum.reduce(msg, fn
       # nil is unwrapped
-      {_, nil}, acc ->
+      {_, nil}, %_{} = acc ->
         acc
 
       # recursive unwrap repeated
-      {k, v}, acc when is_list(v) ->
+      {k, v}, %_{} = acc when is_list(v) ->
         Map.put(acc, k, Enum.map(v, &unwrap_scalars(&1, defs)))
 
       # unwrap messages
-      {k, {oneof, %_{} = v}}, acc when is_atom(oneof) ->
+      {k, {oneof, %_{} = v}}, %_{} = acc when is_atom(oneof) ->
         Map.put(acc, k, {oneof, do_unwrap(v, [msg_module, k, oneof], defs)})
 
-      {k, %_{} = v}, acc ->
+      {k, %_{} = v}, %_{} = acc ->
         Map.put(acc, k, do_unwrap(v, [msg_module, k], defs))
 
       # scalars are unwrapped
-      {_, {oneof, v}}, acc when is_atom(oneof) and Utils.is_scalar(v) ->
+      {_, {oneof, v}}, %_{} = acc when is_atom(oneof) and Utils.is_scalar(v) ->
         acc
 
-      {_, v}, acc when Utils.is_scalar(v) ->
+      {_, v}, %_{} = acc when Utils.is_scalar(v) ->
         acc
     end)
   end

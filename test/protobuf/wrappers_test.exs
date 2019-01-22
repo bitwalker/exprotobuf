@@ -4,6 +4,7 @@ defmodule Protobuf.Wrappers.Test do
   defmodule Proto do
     use Protobuf,
       use_package_names: true,
+      use_google_types: true,
       from: Path.expand("../proto/wrappers.proto", __DIR__)
   end
 
