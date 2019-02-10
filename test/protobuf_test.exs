@@ -119,6 +119,45 @@ defmodule ProtobufTest do
     assert 1 = decoded.f1
   end
 
+  test "can encode when inject is used with repeated field" do
+    defmodule Msg do
+      use Protobuf, [
+        """
+        message Msg {
+          required uint32 f1 = 1;
+        }
+
+        message RepeatedMsg {
+          repeated Msg msgs = 1;
+        }
+        """,
+        only: [:Msg],
+        inject: true
+      ]
+    end
+
+    defmodule RepeatedMsg do
+      use Protobuf, [
+        """
+        message Msg {
+          required uint32 f1 = 1;
+        }
+
+        message RepeatedMsg {
+          repeated Msg msgs = 1;
+        }
+        """,
+        only: [:RepeatedMsg],
+        inject: true
+      ]
+    end
+
+    encoded = RepeatedMsg.encode(RepeatedMsg.new(msgs: [Msg.new(f1: 1)]))
+    decoded = RepeatedMsg.decode(encoded)
+
+    assert 1 = hd(decoded.msgs).f1
+  end
+
   test "can encode when inject is used and definition loaded from a file" do
     defmodule Basic do
       use Protobuf, from: Path.expand("./proto/simple.proto", __DIR__), inject: true
