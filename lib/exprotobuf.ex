@@ -160,7 +160,7 @@ defmodule Protobuf do
 
       if inject do
         ns_init = drop_last_module(ns)
-        {{parsed_type, :"#{ns_init}.#{name |> normalize_name}"}, namespace_fields(type, fields, ns)}
+        {{parsed_type, :"#{ns_init}.#{name |> normalize_name}"}, namespace_fields(type, fields, ns_init)}
       else
         {{parsed_type, :"#{ns}.#{normalize_name(name)}"}, namespace_fields(type, fields, ns)}
       end
