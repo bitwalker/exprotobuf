@@ -89,6 +89,28 @@ each. Enums do not generate structs, but a specialized module with two
 functions: `atom(x)` and `value(x)`. These will get either the name of
 the enum value, or it's associated value.
 
+Values defined in the schema using the `oneof` construct are represented with tuples:
+
+```elixir
+defmodule Messages do
+  use Protobuf, """
+    message Msg {
+      oneof choice {
+        string first = 1;
+        int32 second = 2;
+      }
+    }
+  """
+end
+```
+
+```elixir
+iex> msg = Messages.Msg.new(choice: {:second, 42})
+%Messages.Msg{choice: {:second, 42}}
+iex> encoded = Messages.Msg.encode(msg)
+<<16, 42>>
+```
+
 ### Define from a file
 
 ```elixir
