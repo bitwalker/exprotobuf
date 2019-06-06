@@ -1,0 +1,6 @@
+syntax = "proto2";
+
+message Basic {
+  required uint32 f1 = 1;
+  optional string f2 = 2;
+}

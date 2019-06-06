@@ -129,6 +129,36 @@ defmodule ProtobufTest do
     assert 1 == decoded.f1
   end
 
+  test "can encode when inject is used and definition loaded from a file - proto2" do
+    defmodule Basic do
+      use Protobuf, from: Path.expand("./proto/simple2.proto", __DIR__), inject: true
+    end
+    basic = Basic.new(f1: 1)
+    encoded = Basic.encode(basic)
+    decoded = Basic.decode(encoded)
+    assert basic == decoded
+  end
+
+  test "can encode when inject is used and definition loaded from a file - proto3" do
+    defmodule Basic do
+      use Protobuf, from: Path.expand("./proto/simple3.proto", __DIR__), inject: true
+    end
+    basic = Basic.new(f1: 1)
+    encoded = Basic.encode(basic)
+    decoded = Basic.decode(encoded)
+    assert basic == decoded
+  end
+
+  test "can encode when inject is used and definition loaded from a file - proto3b" do
+    defmodule Basic do
+      use Protobuf, from: Path.expand("./proto/simple3b.proto", __DIR__), inject: true
+    end
+    basic = Basic.new(f1: 1)
+    encoded = Basic.encode(basic)
+    decoded = Basic.decode(encoded)
+    assert basic == decoded
+  end
+
   test "can decode when protocol is extended with new optional field" do
     defmodule BasicProto do
       use Protobuf, """
