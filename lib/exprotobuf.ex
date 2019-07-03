@@ -55,6 +55,48 @@ defmodule Protobuf do
 
     config =
       case opts do
+        %{from: file, use_package_names: use_package_names, only: only, inject: true} ->
+          types = parse_only(only, __CALLER__)
+
+          case types do
+            [] ->
+              raise ConfigError,
+                error: "You must specify a type using :only when combined with inject: true"
+
+            [_type] ->
+              %Config{
+                namespace: namespace,
+                only: types,
+                inject: true,
+                use_package_names: use_package_names,
+                from_file: file,
+                doc: doc
+              }
+          end
+
+          only = last_module(namespace)
+
+          %Config{
+            namespace: namespace,
+            only: [only],
+            from_file: file,
+            inject: true,
+            use_package_names: use_package_names,
+            doc: doc
+          }
+
+        %{from: file, use_package_names: use_package_names, inject: true} ->
+          only = last_module(namespace)
+
+          %Config{
+            namespace: namespace,
+            only: [only],
+            from_file: file,
+            inject: true,
+            use_package_names: use_package_names,
+            doc: doc
+          }
+
         %{from: file, use_package_names: use_package_names} ->
           %Config{
             namespace: namespace,
