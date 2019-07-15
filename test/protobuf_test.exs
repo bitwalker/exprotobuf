@@ -207,6 +207,17 @@ defmodule ProtobufTest do
     assert ns_field_b == B
   end
 
+  test "allow inject, use_package_names and from_file at the same time" do
+    defmodule Version do
+      use Protobuf,
+        from: Path.expand("./proto/mumble.proto", __DIR__),
+        inject: true,
+        use_package_names: true
+    end
+
+    assert Keyword.has_key?(Version.__info__(:functions), :new)
+  end
+
   test "do not set default value for optional" do
     defmodule DefaultValueForOptionalsProto do
       use Protobuf, "message Msg { optional uint32 f1 = 1; }"
