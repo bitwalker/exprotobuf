@@ -58,7 +58,7 @@ defmodule Protobuf.Parser do
 
         case :gpb_parse.parse(tokens ++ [{:"$end", lines + 1}]) do
           {:ok, defs} ->
-            :gpb_parse.post_process_one_file('#{path}', defs, options)
+            :gpb_parse.post_process_one_file(String.to_charlist(path), defs, options)
 
           error ->
             error
