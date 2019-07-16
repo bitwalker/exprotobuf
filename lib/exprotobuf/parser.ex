@@ -49,7 +49,7 @@ defmodule Protobuf.Parser do
   end
 
   defp parse(path, string, options) when is_binary(string) or is_list(string) do
-    case :gpb_scan.string('#{string}') do
+    case :gpb_scan.string(to_charlist(string)) do
       {:ok, tokens, _} ->
         lines =
           string
@@ -58,7 +58,7 @@ defmodule Protobuf.Parser do
 
         case :gpb_parse.parse(tokens ++ [{:"$end", lines + 1}]) do
           {:ok, defs} ->
-            :gpb_parse.post_process_one_file(Atom.to_charlist(path), defs, options)
+            :gpb_parse.post_process_one_file(to_charlist(path), defs, options)
 
           error ->
             error
