@@ -2,10 +2,13 @@ sudo: false
 language: elixir
 elixir:
   - 1.7
+  - 1.8
+  - 1.9
 otp_release:
   - 21.0
+  - 22.0
 env:
   - MIX_ENV=test
 notifications:
   email:
-    - paulschoenfelder@gmail.com
+    - paulschoenfelder@fastmail.com
