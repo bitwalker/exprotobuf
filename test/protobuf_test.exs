@@ -218,6 +218,17 @@ defmodule ProtobufTest do
     assert Keyword.has_key?(Version.__info__(:functions), :new)
   end
 
+  test "ensure google protobuf descriptor can be read" do
+    defmodule FileDescriptorSet do
+      use Protobuf,
+        from: Path.expand("./proto/descriptor.proto", __DIR__),
+        inject: true,
+        use_package_names: true
+    end
+
+    assert Keyword.has_key?(FileDescriptorSet.__info__(:functions), :new)
+  end
+
   test "do not set default value for optional" do
     defmodule DefaultValueForOptionalsProto do
       use Protobuf, "message Msg { optional uint32 f1 = 1; }"
