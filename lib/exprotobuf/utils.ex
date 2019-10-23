@@ -66,7 +66,7 @@ defmodule Protobuf.Utils do
       {{:msg, module}, meta}, acc = %{} ->
         Map.put(acc, module, do_msg_defs(meta))
 
-      {{type, _}, _}, acc = %{} when type in [:enum, :extensions, :service, :group] ->
+      {{type, _}, _}, acc = %{} when type in [:enum, :extensions, :service, :group, :reserved_numbers] ->
         acc
     end)
   end

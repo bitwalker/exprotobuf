@@ -21,7 +21,7 @@ defmodule Protobuf.Decoder do
                end
              end)}
 
-          type when type in [:enum, :extensions, :service, :group] ->
+          type when type in [:enum, :extensions, :service, :group, :reserved_numbers] ->
             {{type, mod}, fields}
         end
       end
