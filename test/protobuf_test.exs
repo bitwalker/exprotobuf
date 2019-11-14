@@ -332,7 +332,7 @@ defmodule ProtobufTest do
       use Protobuf, "message Msg { optional uint32 f1 = 1; }"
     end
     deff = %Protobuf.Field{name: :f1, fnum: 1, rnum: 2, type: :uint32, occurrence: :optional, opts: []}
-    assert deff == FieldDefsProto.Msg.defs(:field, 1)
+    assert deff == FieldDefsProto.Msg.defs(:field, 2)
     assert deff == FieldDefsProto.Msg.defs(:field, :f1)
   end
 
