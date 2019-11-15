@@ -340,10 +340,10 @@ defmodule Protobuf.DefineMessage do
   end
 
   defp fields_methods(fields) do
-    for %Field{name: name, fnum: fnum} = field <- fields do
+    for %Field{name: name, rnum: rnum} = field <- fields do
       quote location: :keep do
-        def defs(:field, unquote(fnum)), do: unquote(Macro.escape(field))
-        def defs(:field, unquote(name)), do: defs(:field, unquote(fnum))
+        def defs(:field, unquote(rnum)), do: unquote(Macro.escape(field))
+        def defs(:field, unquote(name)), do: defs(:field, unquote(rnum))
       end
     end
   end
@@ -351,8 +351,8 @@ defmodule Protobuf.DefineMessage do
   defp oneof_fields_methods(fields) do
     for %OneOfField{name: name, rnum: rnum} = field <- fields do
       quote location: :keep do
-        def defs(:field, unquote(rnum - 1)), do: unquote(Macro.escape(field))
-        def defs(:field, unquote(name)), do: defs(:field, unquote(rnum - 1))
+        def defs(:field, unquote(rnum)), do: unquote(Macro.escape(field))
+        def defs(:field, unquote(name)), do: defs(:field, unquote(rnum))
       end
     end
   end
