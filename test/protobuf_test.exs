@@ -12,10 +12,21 @@ defmodule ProtobufTest do
             string f1 = 1;
         }
         """
-    end 
+    end
+
+    defmodule ReservedProto2 do
+        use Protobuf, """
+        message Foo {
+            reserved 2, 15, 9 to 11;
+            reserved "foo", "bar";
+            string f1 = 1;
+        }
+        """
+    end
     
     # just the compilation pass should suffice as a test itself
     _ = ReservedProto3.Foo.new(f1: "test")
+    _ = ReservedProto2.Foo.new(f1: "test")
   end
 
   test "can roundtrip encoding/decoding optional values in proto2" do
