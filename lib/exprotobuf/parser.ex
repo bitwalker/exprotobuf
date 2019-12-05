@@ -18,10 +18,16 @@ defmodule Protobuf.Parser do
     |> finalize!(options)
   end
 
+  ## filter information about reserved numbers/names,
+  ## as they are useless in this context
+  defp filter_reserved({{:reserved_names, _}, _}), do: false
+  defp filter_reserved({{:reserved_numbers, _}, _}), do: false
+  defp filter_reserved(_), do: true
+
   defp finalize!(defs, options) do
     case :gpb_parse.post_process_all_files(defs, options) do
       {:ok, defs} ->
-        defs
+        defs |> Enum.filter(&filter_reserved/1)
 
       {:error, error} ->
         msg =

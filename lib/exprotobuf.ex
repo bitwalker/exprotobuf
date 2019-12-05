@@ -197,8 +197,7 @@ defmodule Protobuf do
 
   # Apply namespace to top-level types
   defp namespace_types(parsed, ns, inject) do
-    for {{type, name}, fields} <- parsed,
-    is_atom(name) and type != :reserved_numbers and type != :reserved_names do
+    for {{type, name}, fields} <- parsed, is_atom(name) do
       parsed_type = if :gpb.is_msg_proto3(name, parsed), do: :proto3_msg, else: type
 
       if inject do
