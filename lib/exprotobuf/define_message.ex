@@ -149,7 +149,8 @@ defmodule Protobuf.DefineMessage do
         ast = {name, define_field_typespec(type)}
         define_trivial_typespec_fields(rest, [ast | acc])
 
-      %Protobuf.Field{name: name, occurrence: :optional, type: type} ->
+      %Protobuf.Field{name: name, occurrence: occurrence, type: type}
+      when occurrence in [:optional, :defaulty] ->
         ast =
           {name,
            quote do
