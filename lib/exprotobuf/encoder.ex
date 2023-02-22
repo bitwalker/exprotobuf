@@ -28,6 +28,7 @@ defmodule Protobuf.Encoder do
     |> wrap_scalars(Utils.msg_defs(defs))
     |> fix_undefined
     |> Utils.convert_to_record(msg.__struct__)
+    |> tap(:gpb.verify_msg(&1, fixed_defs))
     |> :gpb.encode_msg(fixed_defs)
   end
 
