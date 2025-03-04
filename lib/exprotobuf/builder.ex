@@ -1,17 +1,18 @@
 defmodule Protobuf.Builder do
   @moduledoc false
 
-  alias Protobuf.Config
-
   import Protobuf.DefineEnum, only: [def_enum: 3]
   import Protobuf.DefineMessage, only: [def_message: 3]
+
+  alias Protobuf.Config
 
   def define(msgs, %Config{inject: inject} = config) do
     # When injecting, use_in is not available, so we don't need to use @before_compile
     if inject do
       quote location: :keep do
-        Module.register_attribute(__MODULE__, :use_in, accumulate: true)
         import unquote(__MODULE__), only: [use_in: 2]
+
+        Module.register_attribute(__MODULE__, :use_in, accumulate: true)
 
         unless is_nil(unquote(config.from_file)) do
           case unquote(config.from_file) do
@@ -28,12 +29,13 @@ defmodule Protobuf.Builder do
         @config unquote(Macro.escape(Map.to_list(%{config | :schema => nil})))
         @msgs unquote(Macro.escape(msgs))
         contents = unquote(__MODULE__).generate(@msgs, @config)
-        Module.eval_quoted(__MODULE__, contents, [], __ENV__)
+        Code.eval_quoted(contents, [], __ENV__)
       end
     else
       quote do
-        Module.register_attribute(__MODULE__, :use_in, accumulate: true)
         import unquote(__MODULE__), only: [use_in: 2]
+
+        Module.register_attribute(__MODULE__, :use_in, accumulate: true)
 
         unless is_nil(unquote(config.from_file)) do
           case unquote(config.from_file) do
@@ -57,7 +59,7 @@ defmodule Protobuf.Builder do
   defmacro __before_compile__(_env) do
     quote location: :keep do
       contents = unquote(__MODULE__).generate(@msgs, @config)
-      Module.eval_quoted(__MODULE__, contents, [], __ENV__)
+      Code.eval_quoted(contents, [], __ENV__)
     end
   end
 
@@ -83,12 +85,13 @@ defmodule Protobuf.Builder do
           item_type in [:msg, :proto3_msg, :enum],
           into: [] do
         if only != [] do
-          is_child? = 
-            Enum.any?(only, fn o -> 
+          is_child? =
+            Enum.any?(only, fn o ->
               o != item_name and is_child_type?(item_name, o)
             end)
-          
+
           last_mod = last_module(item_name)
+
           if last_mod in only or is_child? do
             case item_type do
               :msg when is_child? ->

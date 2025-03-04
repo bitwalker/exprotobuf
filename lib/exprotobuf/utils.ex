@@ -1,7 +1,7 @@
 defmodule Protobuf.Utils do
   @moduledoc false
-  alias Protobuf.OneOfField
   alias Protobuf.Field
+  alias Protobuf.OneOfField
 
   @standard_scalar_wrappers %{
     "Google.Protobuf.DoubleValue" => true,
@@ -51,7 +51,7 @@ defmodule Protobuf.Utils do
   end
 
   def convert_to_record(map, module) do
-    module.record
+    module.record()
     |> Enum.reduce([record_name(module)], fn {key, default}, acc ->
       value = Map.get(map, key, default)
       [value_transform(module, value) | acc]
@@ -61,24 +61,16 @@ defmodule Protobuf.Utils do
   end
 
   def msg_defs(defs) when is_list(defs) do
-    defs
-    |> Enum.reduce(%{}, fn
-      {{:msg, module}, meta}, acc = %{} ->
-        Map.put(acc, module, do_msg_defs(meta))
-
-      {{type, _}, _}, acc = %{} when type in [:enum, :extensions, :service, :group] ->
-        acc
+    Enum.reduce(defs, %{}, fn
+      {{:msg, module}, meta}, %{} = acc -> Map.put(acc, module, do_msg_defs(meta))
+      {{type, _}, _}, %{} = acc when type in [:enum, :extensions, :service, :group] -> acc
     end)
   end
 
   defp do_msg_defs(defs) when is_list(defs) do
-    defs
-    |> Enum.reduce(%{}, fn
-      meta = %Field{name: name}, acc = %{} ->
-        Map.put(acc, name, meta)
-
-      %OneOfField{name: name, fields: fields}, acc = %{} ->
-        Map.put(acc, name, do_msg_defs(fields))
+    Enum.reduce(defs, %{}, fn
+      %Field{name: name} = meta, %{} = acc -> Map.put(acc, name, meta)
+      %OneOfField{name: name, fields: fields}, %{} = acc -> Map.put(acc, name, do_msg_defs(fields))
     end)
   end
 
@@ -97,7 +89,7 @@ defmodule Protobuf.Utils do
   def convert_from_record(rec, module) do
     map = struct(module)
 
-    module.record
+    module.record()
     |> Enum.with_index()
     |> Enum.reduce(map, fn {{key, _default}, idx}, acc ->
       # rec has the extra element when defines the record type

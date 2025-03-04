@@ -1,13 +1,16 @@
 defmodule Protobuf.Decoder do
-  use Bitwise, only_operators: true
-  require Protobuf.Utils, as: Utils
+  @moduledoc false
+  import Bitwise
+
   alias Protobuf.Field
   alias Protobuf.OneOfField
+
+  require Protobuf.Utils, as: Utils
 
   # Decode with record/module
   def decode(bytes, module) do
     defs =
-      for {{type, mod}, fields} <- module.defs, into: [] do
+      for {{type, mod}, fields} <- module.defs(), into: [] do
         case type do
           :msg ->
             {{:msg, mod},
@@ -30,7 +33,7 @@ defmodule Protobuf.Decoder do
     |> :gpb.decode_msg(module, defs)
     |> Utils.convert_from_record(module)
     |> convert_fields()
-    |> unwrap_scalars(Utils.msg_defs(module.defs))
+    |> unwrap_scalars(Utils.msg_defs(module.defs()))
   end
 
   def varint(bytes) do
@@ -42,13 +45,13 @@ defmodule Protobuf.Decoder do
     |> Map.from_struct()
     |> Map.keys()
     |> Enum.reduce(msg, fn field, msg ->
-        value = Map.get(msg, field)
+      value = Map.get(msg, field)
 
-        if value == :undefined do
-          Map.put(msg, field, get_default(module.syntax(), field, module))
-        else
-          convert_field(value, msg, module.defs(:field, field))
-        end
+      if value == :undefined do
+        Map.put(msg, field, get_default(module.syntax(), field, module))
+      else
+        convert_field(value, msg, module.defs(:field, field))
+      end
     end)
   end
 
@@ -67,7 +70,7 @@ defmodule Protobuf.Decoder do
             ""
 
           ty ->
-            case :gpb.proto3_type_default(ty, module.defs) do
+            case :gpb.proto3_type_default(ty, module.defs()) do
               :undefined ->
                 nil
 
@@ -85,6 +88,7 @@ defmodule Protobuf.Decoder do
           for v <- value do
             convert_value(type, v)
           end
+
         Map.put(msg, field, value)
 
       {_, :string} ->
@@ -118,8 +122,7 @@ defmodule Protobuf.Decoder do
     end
   end
 
-  defp convert_value(:string, value),
-    do: :unicode.characters_to_binary(value)
+  defp convert_value(:string, value), do: :unicode.characters_to_binary(value)
 
   defp convert_value({:msg, _}, value) do
     value
@@ -131,8 +134,7 @@ defmodule Protobuf.Decoder do
     {convert_value(key_type, key), convert_value(value_type, value)}
   end
 
-  defp convert_value(_, value),
-    do: value
+  defp convert_value(_, value), do: value
 
   defp unwrap_scalars(%msg_module{} = msg, %{} = defs) do
     msg
@@ -164,7 +166,7 @@ defmodule Protobuf.Decoder do
 
   defp unwrap_scalars(v, %{}), do: v
 
-  defp do_unwrap(v = %_{}, keys = [_ | _], defs = %{}) do
+  defp do_unwrap(%_{} = v, [_ | _] = keys, %{} = defs) do
     %Field{type: {:msg, module}} = get_in(defs, keys)
 
     if Utils.is_standard_scalar_wrapper(module) do
@@ -174,7 +176,7 @@ defmodule Protobuf.Decoder do
     end
   end
 
-  defp do_unwrap_enum(v = %_{}, module, defs = %{}) do
+  defp do_unwrap_enum(%_{} = v, module, %{} = defs) do
     case Enum.to_list(Map.get(defs, module)) do
       [value: %Field{type: {:enum, enum_module}}] ->
         if Utils.is_enum_wrapper(module, enum_module) do

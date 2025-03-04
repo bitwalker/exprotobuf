@@ -2,10 +2,10 @@ defmodule Protobuf.DefineMessage do
   @moduledoc false
 
   alias Protobuf.Decoder
+  alias Protobuf.Delimited
   alias Protobuf.Encoder
   alias Protobuf.Field
   alias Protobuf.OneOfField
-  alias Protobuf.Delimited
   alias Protobuf.Utils
 
   def def_message(name, fields, inject: inject, doc: doc, syntax: syntax) when is_list(fields) do
@@ -61,7 +61,7 @@ defmodule Protobuf.DefineMessage do
           unquote(constructors(name))
 
           if use_in != nil do
-            Module.eval_quoted(__MODULE__, use_in, [], __ENV__)
+            Code.eval_quoted(use_in, [], __ENV__)
           end
 
           defimpl Protobuf.Serializable do
@@ -76,7 +76,7 @@ defmodule Protobuf.DefineMessage do
 
   defp constructors(name) do
     quote location: :keep do
-      def new(), do: new([])
+      def new, do: new([])
 
       def new(values) do
         struct(unquote(name), values)

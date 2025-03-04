@@ -1,7 +1,9 @@
 defmodule Protobuf.Encoder do
-  require Protobuf.Utils, as: Utils
+  @moduledoc false
   alias Protobuf.Field
   alias Protobuf.OneOfField
+
+  require Protobuf.Utils, as: Utils
 
   def encode(%{} = msg, defs) do
     fixed_defs =
@@ -26,8 +28,9 @@ defmodule Protobuf.Encoder do
 
     msg
     |> wrap_scalars(Utils.msg_defs(defs))
-    |> fix_undefined
+    |> fix_undefined()
     |> Utils.convert_to_record(msg.__struct__)
+    |> tap(&:gpb.verify_msg(&1, fixed_defs))
     |> :gpb.encode_msg(fixed_defs)
   end
 
@@ -47,8 +50,7 @@ defmodule Protobuf.Encoder do
 
   defp fix_value(nil), do: :undefined
 
-  defp fix_value(values) when is_list(values),
-    do: Enum.map(values, &fix_value/1)
+  defp fix_value(values) when is_list(values), do: Enum.map(values, &fix_value/1)
 
   defp fix_value(%module{} = value) do
     value
@@ -70,32 +72,32 @@ defmodule Protobuf.Encoder do
     |> Map.from_struct()
     |> Enum.reduce(msg, fn
       # nil is unwrapped
-      {_, nil}, acc = %_{} ->
+      {_, nil}, %_{} = acc ->
         acc
 
       # recursive wrap repeated
-      {k, v}, acc = %_{} when is_list(v) ->
+      {k, v}, %_{} = acc when is_list(v) ->
         Map.put(acc, k, Enum.map(v, &wrap_scalars(&1, defs)))
 
       # recursive wrap message
-      {k, {oneof, v = %_{}}}, acc = %_{} when is_atom(oneof) ->
+      {k, {oneof, %_{} = v}}, %_{} = acc when is_atom(oneof) ->
         Map.put(acc, k, {oneof, wrap_scalars(v, defs)})
 
-      {k, v = %_{}}, acc = %_{} ->
+      {k, %_{} = v}, %_{} = acc ->
         Map.put(acc, k, wrap_scalars(v, defs))
 
       # plain wrap scalar
-      {k, {oneof, v}}, acc = %_{} when is_atom(oneof) and Utils.is_scalar(v) ->
+      {k, {oneof, v}}, %_{} = acc when is_atom(oneof) and Utils.is_scalar(v) ->
         Map.put(acc, k, {oneof, do_wrap(v, [msg_module, k, oneof], defs)})
 
-      {k, v}, acc = %_{} when Utils.is_scalar(v) ->
+      {k, v}, %_{} = acc when Utils.is_scalar(v) ->
         Map.put(acc, k, do_wrap(v, [msg_module, k], defs))
     end)
   end
 
   defp wrap_scalars(v, %{}), do: v
 
-  defp do_wrap(v, keys = [_ | _], defs = %{}) do
+  defp do_wrap(v, [_ | _] = keys, %{} = defs) do
     case get_in(defs, keys) do
       %Field{type: scalar} when is_atom(scalar) ->
         v
@@ -105,18 +107,18 @@ defmodule Protobuf.Encoder do
 
       %Field{type: {:msg, module}} when is_atom(module) ->
         if Utils.is_standard_scalar_wrapper(module) do
-          Map.put(module.new, :value, v)
+          Map.put(module.new(), :value, v)
         else
           do_wrap_enum(v, module, defs)
         end
     end
   end
 
-  defp do_wrap_enum(v, module, defs = %{}) do
+  defp do_wrap_enum(v, module, %{} = defs) do
     case Enum.to_list(Map.get(defs, module)) do
       [value: %Field{type: {:enum, enum_module}}] ->
         if Utils.is_enum_wrapper(module, enum_module) do
-          Map.put(module.new, :value, v)
+          Map.put(module.new(), :value, v)
         else
           v
         end

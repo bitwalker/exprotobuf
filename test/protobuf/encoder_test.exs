@@ -40,7 +40,7 @@ defmodule Protobuf.Encoder.Test do
       }
       """
   end
-  
+
   #defmodule ExtensionsProto do
     #use Protobuf, """
     #message Msg {
@@ -57,6 +57,12 @@ defmodule Protobuf.Encoder.Test do
     msg = EncoderProto.Msg.new(f1: 150)
     assert <<8, 150, 1>> == Protobuf.Serializable.serialize(msg)
     assert <<10, 3, 8, 150, 1>> == Protobuf.Serializable.serialize(EncoderProto.WithSubMsg.new(f1: msg))
+  end
+
+  test "Raises when integer is out of range" do
+    assert_raise ErlangError, fn ->
+      EncoderProto.Msg.new(f1: 2 ** 128)
+    end
   end
 
   test "fixing a nil value in repeated submsg" do
